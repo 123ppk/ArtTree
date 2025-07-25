@@ -134,6 +134,10 @@
       .card img { width: 80px; height: 80px; }
     }
   </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -184,6 +188,20 @@
 </div>
 
 <script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDKxW2RqlVN6Hafx7WdehTuQIk5KScpIeo",
+    authDomain: "arttree-f1d9e.firebaseapp.com",
+    projectId: "arttree-f1d9e",
+    storageBucket: "arttree-f1d9e.appspot.com",
+    messagingSenderId: "454767883548",
+    appId: "1:454767883548:web:298a8d060e0d0fc1db36d9",
+    measurementId: "G-L77JE0T68Q"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+
   const loginSection = document.getElementById('loginSection');
   const adminPanel = document.getElementById('adminPanel');
   const userView = document.getElementById('userView');
@@ -201,14 +219,41 @@
     adminPanel.style.display = 'none';
     userView.style.display = 'none';
     logoutBtn.style.display = 'none';
+    firebase.auth().signOut();
   }
 
   function login() {
     const email = document.getElementById('email').value.trim().toLowerCase();
     const password = document.getElementById('password').value.trim();
 
-    if (!email || !password) return alert("Fill all fields");
+    if (!email || !password) {
+      alert("Fill all fields");
+      return;
+    }
 
+    // Try sign in
+    firebase.auth().signInWithEmailAndPassword(email, password)
+      .then((userCredential) => {
+        // Signed in
+        setupUserView(email);
+      })
+      .catch((error) => {
+        if (error.code === 'auth/user-not-found') {
+          // User doesn't exist, create account
+          firebase.auth().createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+              setupUserView(email);
+            })
+            .catch((err) => {
+              alert('Signup error: ' + err.message);
+            });
+        } else {
+          alert('Login error: ' + error.message);
+        }
+      });
+  }
+
+  function setupUserView(email) {
     if (email === adminEmail) {
       userType = 'admin';
       loginSection.style.display = 'none';
@@ -223,8 +268,11 @@
       showUserView();
     } else {
       alert("Invalid email! Use admin@arttree.com or user@arttree.com");
+      firebase.auth().signOut();
     }
   }
+
+  // Rest of your existing code below — unchanged
 
   function resizeAndReadImage(file, callback) {
     const reader = new FileReader();
@@ -343,6 +391,12 @@
 
   window.onload = () => {
     loginSection.style.display = 'block';
+    // Optional: Keep user logged in on refresh:
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        setupUserView(user.email.toLowerCase());
+      }
+    });
   };
 </script>
 </body>
