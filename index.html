@@ -1,82 +1,137 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ArtTree Gallery View</title>
+  <title>ArtTree - Your Link to Artfruit</title>
   <style>
+    * { box-sizing: border-box; }
     body {
+      margin: 0;
       font-family: 'Segoe UI', sans-serif;
       background: #fdf6f0;
-      margin: 0;
+      color: #333;
+    }
+    header {
+      text-align: center;
+      padding: 1em;
+      background: #8e44ad;
+      color: white;
+    }
+    header h1 { margin: 0; font-size: 2em; }
+    header p { margin: 0.2em 0; font-style: italic; }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
       padding: 1em;
     }
-    h1 {
-      text-align: center;
-      color: #8e44ad;
-    }
+
     .card {
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin: 1em auto;
+      margin: 1em 0;
       padding: 1em;
       text-align: center;
-      max-width: 600px;
       position: relative;
     }
-    .card img.profile {
+
+    .card img {
       max-width: 100px;
       height: 100px;
       object-fit: cover;
       border-radius: 50%;
     }
-    .art-images {
-      margin-top: 1em;
-    }
-    .art-images img {
+
+    .card .art-images img {
       width: 60px;
+      margin: 5px;
       height: 60px;
       object-fit: cover;
       border-radius: 8px;
-      margin: 5px;
       cursor: zoom-in;
     }
+
+    .icons {
+      margin-top: 1em;
+    }
+
     .icons a {
       margin: 0 10px;
       color: #8e44ad;
-      text-decoration: none;
+      font-weight: bold;
     }
-    #zoomModal {
+
+    #payPopup {
+      display: none;
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      display: none;
+      background: rgba(0,0,0,0.6);
       justify-content: center;
       align-items: center;
       z-index: 999;
     }
-    #zoomModal img {
+
+    #payPopup .popup-inner {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 300px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      cursor: zoom-out;
+      user-select: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal img {
       max-width: 90%;
       max-height: 90vh;
       border-radius: 12px;
-      box-shadow: 0 0 30px #000;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
     }
   </style>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-<h1>🎨 ArtTree Gallery</h1>
-<div id="gallery"></div>
+<header>
+  <h1>ArtTree</h1>
+  <p>Your link to the artfruit 🍇</p>
+</header>
 
-<div id="zoomModal" onclick="this.style.display='none'">
-  <img id="zoomedImage" src="" />
+<div class="container">
+  <div id="userCardView"></div>
 </div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<div id="payPopup">
+  <div class="popup-inner">
+    <h3>Card Expired</h3>
+    <p>This card has expired. Please renew to unlock more features.</p>
+    <img src="https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=upi://pay?pa=youremail@upi&pn=ArtTree&am=99&cu=INR" alt="GPay QR" />
+    <br><br>
+    <button onclick="document.getElementById('payPopup').style.display='none'">Close</button>
+  </div>
+</div>
+
+<div id="imgModal" class="modal" onclick="closeModal()">
+  <img id="modalImg" />
+</div>
 
 <script>
   const firebaseConfig = {
@@ -86,46 +141,65 @@
     storageBucket: "arttree-f1d9e.appspot.com",
     messagingSenderId: "454767883548",
     appId: "1:454767883548:web:298a8d060e0d0fc1db36d9",
+    measurementId: "G-L77JE0T68Q"
   };
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  async function loadCards() {
-    const container = document.getElementById("gallery");
-    const snapshot = await db.collection("artistCards").get();
-    snapshot.forEach(doc => {
-      const card = doc.data();
+  function showUserView(cards) {
+    const list = document.getElementById('userCardView');
+    list.innerHTML = '';
+    cards.forEach((card) => {
       const createdDate = new Date(card.created);
       const expiryDate = new Date(createdDate);
       expiryDate.setMonth(createdDate.getMonth() + 3);
-      const expired = new Date() > expiryDate;
+      const now = new Date();
+      const expired = now > expiryDate;
 
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
-        <img class="profile" src="${card.profile}" />
-        <h3>${card.name}</h3>
-        <p>${createdDate.toDateString()} - ${expiryDate.toDateString()}</p>
-        <div class="icons">
-          <a href="${card.insta}" target="_blank">Instagram</a>
-          <a href="${card.art}" target="_blank">Portfolio</a>
-        </div>
-        <div class="art-images">
-          ${card.arts.map(img => `<img src="${img}" onclick="zoomImage('${img}')" />`).join('')}
-        </div>
-        ${expired ? `<p style="color:red;"><b>Card Expired</b></p>` : ""}
-      `;
-      container.appendChild(div);
+      list.innerHTML += `
+        <div class="card" onclick="${expired ? 'showPayPopup()' : ''}">
+          <img src="${card.profile}" />
+          <h3>${card.name}</h3>
+          <div>${createdDate.toDateString()} - ${expiryDate.toDateString()}</div>
+          <div class="icons">
+            <a href="${card.insta}" target="_blank">Instagram</a>
+            <a href="${card.art}" target="_blank">Art Link</a>
+          </div>
+          <div class="art-images">
+            ${card.arts.map(a => `<img src="${a}" onclick="zoomImage('${a}')" />`).join('')}
+          </div>
+        </div>`;
     });
   }
 
   function zoomImage(src) {
-    document.getElementById("zoomedImage").src = src;
-    document.getElementById("zoomModal").style.display = "flex";
+    const modal = document.getElementById("imgModal");
+    const modalImg = document.getElementById("modalImg");
+    modalImg.src = src;
+    modal.style.display = "flex";
   }
 
-  loadCards();
+  function closeModal() {
+    document.getElementById("imgModal").style.display = "none";
+  }
+
+  function showPayPopup() {
+    document.getElementById('payPopup').style.display = 'flex';
+  }
+
+  async function loadCardsFromFirestore() {
+    try {
+      const snapshot = await db.collection('artistCards').get();
+      const storedCards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      showUserView(storedCards);
+    } catch (e) {
+      alert('Error loading cards: ' + e.message);
+    }
+  }
+
+  window.onload = loadCardsFromFirestore;
 </script>
+
 </body>
 </html>
