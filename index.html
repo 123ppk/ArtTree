@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ArtTree - Your Link to Artfruit</title>
   <style>
-    /* तुमचा मूळ CSS इथेच आहे */
+    /* तुमचा मूळ CSS तसाच */
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -41,18 +41,14 @@
       font-family: inherit;
     }
 
-    input {
-      width: 100%;
-    }
+    input { width: 100%; }
 
     button {
-      width: auto;
-      background: #b47ed6; /* light purple */
+      background: #b47ed6;
       color: white;
       border: none;
       cursor: pointer;
-      padding-left: 1.2em;
-      padding-right: 1.2em;
+      padding: 0.7em 1.2em;
       font-weight: 600;
     }
 
@@ -139,6 +135,7 @@
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
 </head>
 <body>
@@ -151,7 +148,6 @@
 <button id="logoutBtn" onclick="logout()">Logout</button>
 
 <div class="container">
-
   <div class="login-section" id="loginSection">
     <h2>Login / Signup</h2>
     <input type="email" id="email" placeholder="Enter email" />
@@ -176,7 +172,6 @@
     <h2>Your ArtTree</h2>
     <div id="userCardView"></div>
   </div>
-
 </div>
 
 <div id="payPopup">
@@ -190,32 +185,29 @@
 </div>
 
 <script>
-  // Firebase config - तुमच्या Firebase Console मधून योग्य config ने बदला ही खालील ओळी
   const firebaseConfig = {
     apiKey: "AIzaSyDKxW2RqlVN6Hafx7WdehTuQIk5KScpIeo",
     authDomain: "arttree-f1d9e.firebaseapp.com",
     projectId: "arttree-f1d9e",
-    storageBucket: "arttree-f1d9e.appspot.com",  // हे appspot.com असायला हवं
+    storageBucket: "arttree-f1d9e.appspot.com",
     messagingSenderId: "454767883548",
     appId: "1:454767883548:web:298a8d060e0d0fc1db36d9",
     measurementId: "G-L77JE0T68Q"
   };
 
-  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const storage = firebase.storage();
+  const db = firebase.firestore();
 
   const loginSection = document.getElementById('loginSection');
   const adminPanel = document.getElementById('adminPanel');
   const userView = document.getElementById('userView');
   const logoutBtn = document.getElementById('logoutBtn');
-
   const adminEmail = 'admin@arttree.com';
-  let userType = '';
 
-  // Load stored cards from localStorage
-  let storedCards = JSON.parse(localStorage.getItem('artistCards') || '[]');
+  let userType = '';
+  let storedCards = [];
 
   function logout() {
     auth.signOut().then(() => {
@@ -224,33 +216,28 @@
       adminPanel.style.display = 'none';
       userView.style.display = 'none';
       logoutBtn.style.display = 'none';
+      storedCards = [];
     });
   }
 
   function login() {
     const email = document.getElementById('email').value.trim().toLowerCase();
     const password = document.getElementById('password').value.trim();
-
     if (!email || !password) return alert("Fill all fields");
 
-    // Use Firebase Authentication to sign in or sign up
     auth.signInWithEmailAndPassword(email, password)
       .then(userCredential => {
-        // Logged in successfully
         const user = userCredential.user;
         postLogin(user.email);
       })
       .catch((error) => {
-        // If user not found, create account (signup)
-        if(error.code === 'auth/user-not-found') {
+        if (error.code === 'auth/user-not-found') {
           auth.createUserWithEmailAndPassword(email, password)
             .then(userCredential => {
               const user = userCredential.user;
               postLogin(user.email);
             })
-            .catch(err => {
-              alert("Error: " + err.message);
-            });
+            .catch(err => alert("Error: " + err.message));
         } else {
           alert("Login error: " + error.message);
         }
@@ -258,21 +245,22 @@
   }
 
   function postLogin(email) {
-    if(email.toLowerCase() === adminEmail) {
+    if (email.toLowerCase() === adminEmail) {
       userType = 'admin';
       loginSection.style.display = 'none';
       adminPanel.style.display = 'block';
       logoutBtn.style.display = 'block';
-      showAllCards();
+      loadCardsFromFirestore();
     } else {
       userType = 'user';
       loginSection.style.display = 'none';
       userView.style.display = 'block';
       logoutBtn.style.display = 'block';
-      showUserView();
+      loadCardsFromFirestore();
     }
   }
 
+  // Resize image to base64 (same as before)
   function resizeAndReadImage(file, callback) {
     const reader = new FileReader();
     reader.onload = function (e) {
@@ -292,10 +280,10 @@
     reader.readAsDataURL(file);
   }
 
-  function addCard() {
-    const name = document.getElementById('artistName').value;
-    const insta = document.getElementById('instaLink').value;
-    const art = document.getElementById('artLink').value;
+  async function addCard() {
+    const name = document.getElementById('artistName').value.trim();
+    const insta = document.getElementById('instaLink').value.trim();
+    const art = document.getElementById('artLink').value.trim();
     const profileFile = document.getElementById('profilePic').files[0];
     const artFiles = document.getElementById('artImages').files;
 
@@ -303,23 +291,55 @@
       return alert("Please fill all fields and add images");
     }
 
-    resizeAndReadImage(profileFile, (profileData) => {
+    resizeAndReadImage(profileFile, async (profileData) => {
       let artDataList = [];
       let loaded = 0;
       for (let i = 0; i < artFiles.length && i < 10; i++) {
-        resizeAndReadImage(artFiles[i], (imgData) => {
-          artDataList.push(imgData);
-          loaded++;
-          if (loaded === Math.min(artFiles.length, 10)) {
-            const createdDate = new Date().toISOString();
-            const card = { name, insta, art, profile: profileData, arts: artDataList, created: createdDate };
-            storedCards.push(card);
-            localStorage.setItem('artistCards', JSON.stringify(storedCards));
-            showAllCards();
-          }
+        await new Promise(resolve => {
+          resizeAndReadImage(artFiles[i], (imgData) => {
+            artDataList.push(imgData);
+            loaded++;
+            resolve();
+          });
         });
       }
+      const createdDate = new Date().toISOString();
+      const card = { name, insta, art, profile: profileData, arts: artDataList, created: createdDate };
+
+      try {
+        await db.collection('artistCards').add(card);
+        alert('Artist card added!');
+        clearInputs();
+        loadCardsFromFirestore();
+      } catch(e) {
+        alert('Error adding card: ' + e.message);
+      }
     });
+  }
+
+  // Clear input fields after adding card
+  function clearInputs() {
+    document.getElementById('artistName').value = '';
+    document.getElementById('instaLink').value = '';
+    document.getElementById('artLink').value = '';
+    document.getElementById('profilePic').value = '';
+    document.getElementById('artImages').value = '';
+  }
+
+  // Load cards from Firestore
+  async function loadCardsFromFirestore() {
+    try {
+      const snapshot = await db.collection('artistCards').get();
+      storedCards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      if (userType === 'admin') {
+        showAllCards();
+      } else {
+        showUserView();
+      }
+    } catch(e) {
+      alert('Error loading cards: ' + e.message);
+    }
   }
 
   function showAllCards() {
@@ -327,14 +347,13 @@
     list.innerHTML = '';
     storedCards.forEach((card, index) => {
       const createdDate = new Date(card.created);
-      const expiryDate = new Date(createdDate);
-      expiryDate.setMonth(createdDate.getMonth() + 3);
+      const expiryDate = new Date(createdDate); expiryDate.setMonth(createdDate.getMonth() + 3);
       const now = new Date();
       const expired = now > expiryDate;
 
       list.innerHTML += `
         <div class="card">
-          <span class="close-btn" onclick="deleteCard(${index})">×</span>
+          <span class="close-btn" onclick="deleteCard('${card.id}')">×</span>
           <img src="${card.profile}" />
           <h3>${card.name}</h3>
           <div>${createdDate.toDateString()} - ${expiryDate.toDateString()}</div>
@@ -350,11 +369,14 @@
     });
   }
 
-  function deleteCard(index) {
+  async function deleteCard(id) {
     if (confirm("Delete this artist card?")) {
-      storedCards.splice(index, 1);
-      localStorage.setItem('artistCards', JSON.stringify(storedCards));
-      showAllCards();
+      try {
+        await db.collection('artistCards').doc(id).delete();
+        loadCardsFromFirestore();
+      } catch(e) {
+        alert('Error deleting card: ' + e.message);
+      }
     }
   }
 
@@ -363,8 +385,7 @@
     list.innerHTML = '';
     storedCards.forEach((card) => {
       const createdDate = new Date(card.created);
-      const expiryDate = new Date(createdDate);
-      expiryDate.setMonth(createdDate.getMonth() + 3);
+      const expiryDate = new Date(createdDate); expiryDate.setMonth(createdDate.getMonth() + 3);
       const now = new Date();
       const expired = now > expiryDate;
 
@@ -388,18 +409,16 @@
     document.getElementById('payPopup').style.display = 'flex';
   }
 
-  // On page load, check if user already logged in
   auth.onAuthStateChanged(user => {
-    if (user) {
-      postLogin(user.email);
-    } else {
+    if (user) postLogin(user.email);
+    else {
       loginSection.style.display = 'block';
       adminPanel.style.display = 'none';
       userView.style.display = 'none';
       logoutBtn.style.display = 'none';
+      storedCards = [];
     }
   });
 </script>
-
 </body>
 </html>
