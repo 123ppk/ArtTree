@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ArtTree - Your Link to Artfruit</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #fdf6f0;
+      color: #333;
+    }
+    header {
+      text-align: center;
+      padding: 1em;
+      background: #8e44ad;
+      color: white;
+    }
+    header h1 { margin: 0; font-size: 2em; }
+    header p { margin: 0.2em 0; font-style: italic; }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 1em;
+    }
+
+    .login-section, .admin-panel, .user-view {
+      display: none;
+    }
+
+    input, button {
+      margin: 0.5em 0;
+      padding: 0.7em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      font-family: inherit;
+    }
+
+    input {
+      width: 100%;
+    }
+
+    button {
+      width: auto;
+      background: #b47ed6;
+      color: white;
+      border: none;
+      cursor: pointer;
+      padding-left: 1.2em;
+      padding-right: 1.2em;
+      font-weight: 600;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin: 1em 0;
+      padding: 1em;
+      text-align: center;
+      position: relative;
+    }
+
+    .card img {
+      max-width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .card .art-images img {
+      width: 60px;
+      margin: 5px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .icons {
+      margin-top: 1em;
+    }
+
+    .icons a {
+      margin: 0 10px;
+      color: #8e44ad;
+      font-weight: bold;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      cursor: pointer;
+      font-size: 20px;
+      color: red;
+    }
+
+    #logoutBtn {
+      display: none;
+      background: #c0392b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+    }
+
+    #payPopup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    #payPopup .popup-inner {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 300px;
+    }
+
+    .chip-container {
+      padding: 10px;
+    }
+
+    .chip {
+      display: inline-block;
+      padding: 8px 14px;
+      background: #8e44ad;
+      color: white;
+      border-radius: 20px;
+      margin: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .card img { width: 80px; height: 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ArtTree</h1>
+  <p>Your link to the artfruit 🍇</p>
+</header>
+
+<!-- Search + Filter Chips -->
+<div class="chip-container" id="categoryChips"></div>
+<div style="padding: 0 10px;">
+  <input type="text" id="searchInput" placeholder="Search artist by name..." onkeyup="searchByName()" />
+</div>
+
+<button id="logoutBtn" onclick="logout()">Logout</button>
+
+<div class="container">
+
+  <div class="login-section" id="loginSection">
+    <h2>Login / Signup</h2>
+    <input type="email" id="email" placeholder="Enter email" />
+    <input type="password" id="password" placeholder="Enter password" />
+    <button onclick="login()">Login / Signup</button>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <h2>Add Artist Card</h2>
+    <input type="text" id="artistName" placeholder="Artist Name" />
+    <input type="text" id="artistCategory" placeholder="Enter Category" />
+    <input type="text" id="instaLink" placeholder="Instagram Link" />
+    <input type="text" id="artLink" placeholder="Portfolio/Art Link" />
+    <input type="file" id="profilePic" accept="image/*" />
+    <label>Upload up to 10 Art Images</label>
+    <input type="file" id="artImages" accept="image/*" multiple />
+    <button onclick="addCard()">Add Artist Card</button>
+    <hr>
+    <div id="cardList"></div>
+  </div>
+
+  <div class="user-view" id="userView">
+    <h2>Your ArtTree</h2>
+    <div id="userCardView"></div>
+  </div>
+</div>
+
+<div id="payPopup">
+  <div class="popup-inner">
+    <h3>Card Expired</h3>
+    <p>This card has expired. Please renew to unlock more features.</p>
+    <img src="https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=upi://pay?pa=youremail@upi&pn=ArtTree&am=99&cu=INR" alt="GPay QR" />
+    <br><br>
+    <button onclick="document.getElementById('payPopup').style.display='none'">Close</button>
+  </div>
+</div>
+
+<script>
+  const loginSection = document.getElementById('loginSection');
+  const adminPanel = document.getElementById('adminPanel');
+  const userView = document.getElementById('userView');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const adminEmail = 'admin@arttree.com';
+  const userEmail = 'user@arttree.com';
+  const storedCards = JSON.parse(localStorage.getItem('artistCards') || '[]');
+  let userType = '';
+
+  function logout() {
+    userType = '';
+    loginSection.style.display = 'block';
+    adminPanel.style.display = 'none';
+    userView.style.display = 'none';
+    logoutBtn.style.display = 'none';
+  }
+
+  function login() {
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value.trim();
+
+    if (!email || !password) return alert("Fill all fields");
+
+    if (email === adminEmail) {
+      userType = 'admin';
+      loginSection.style.display = 'none';
+      adminPanel.style.display = 'block';
+      logoutBtn.style.display = 'block';
+      showAllCards();
+      renderCategoryChips();
+    } else if (email === userEmail) {
+      userType = 'user';
+      loginSection.style.display = 'none';
+      userView.style.display = 'block';
+      logoutBtn.style.display = 'block';
+      showUserView();
+      renderCategoryChips();
+    } else {
+      alert("Invalid email! Use admin@arttree.com or user@arttree.com");
+    }
+  }
+
+  function resizeAndReadImage(file, callback) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        const MAX_SIZE = 300;
+        const scale = MAX_SIZE / Math.max(img.width, img.height);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL("image/jpeg", 0.7));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function addCard() {
+    const name = document.getElementById('artistName').value;
+    const category = document.getElementById('artistCategory').value.trim() || 'Uncategorized';
+    const insta = document.getElementById('instaLink').value;
+    const art = document.getElementById('artLink').value;
+    const profileFile = document.getElementById('profilePic').files[0];
+    const artFiles = document.getElementById('artImages').files;
+
+    if (!name || !insta || !art || !profileFile || artFiles.length < 1) {
+      return alert("Please fill all fields and add images");
+    }
+
+    resizeAndReadImage(profileFile, (profileData) => {
+      let artDataList = [];
+      let loaded = 0;
+      for (let i = 0; i < artFiles.length && i < 10; i++) {
+        resizeAndReadImage(artFiles[i], (imgData) => {
+          artDataList.push(imgData);
+          loaded++;
+          if (loaded === Math.min(artFiles.length, 10)) {
+            const createdDate = new Date().toISOString();
+            const card = { name, category, insta, art, profile: profileData, arts: artDataList, created: createdDate };
+            storedCards.push(card);
+            localStorage.setItem('artistCards', JSON.stringify(storedCards));
+            showAllCards();
+            renderCategoryChips();
+          }
+        });
+      }
+    });
+  }
+
+  function showAllCards() {
+    const list = document.getElementById('cardList');
+    list.innerHTML = '';
+    storedCards.forEach((card, index) => {
+      const createdDate = new Date(card.created);
+      const expiryDate = new Date(createdDate);
+      expiryDate.setMonth(createdDate.getMonth() + 3);
+      const now = new Date();
+      const expired = now > expiryDate;
+
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.setAttribute("data-category", card.category || 'Uncategorized');
+      div.innerHTML = `
+        <span class="close-btn" onclick="deleteCard(${index})">×</span>
+        <img src="${card.profile}" />
+        <h3>${card.name}</h3>
+        <div>${createdDate.toDateString()} - ${expiryDate.toDateString()}</div>
+        <div class="icons">
+          <a href="${card.insta}" target="_blank">Instagram</a>
+          <a href="${card.art}" target="_blank">Art Link</a>
+        </div>
+        <div class="art-images">
+          ${card.arts.map(a => `<img src="${a}" />`).join('')}
+        </div>
+        ${expired ? '<button onclick="showPayPopup()">Pay Now</button>' : ''}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function deleteCard(index) {
+    if (confirm("Delete this artist card?")) {
+      storedCards.splice(index, 1);
+      localStorage.setItem('artistCards', JSON.stringify(storedCards));
+      showAllCards();
+      renderCategoryChips();
+    }
+  }
+
+  function showUserView() {
+    const list = document.getElementById('userCardView');
+    list.innerHTML = '';
+    storedCards.forEach((card) => {
+      const createdDate = new Date(card.created);
+      const expiryDate = new Date(createdDate);
+      expiryDate.setMonth(createdDate.getMonth() + 3);
+      const now = new Date();
+      const expired = now > expiryDate;
+
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.setAttribute("data-category", card.category || 'Uncategorized');
+      div.innerHTML = `
+        <img src="${card.profile}" />
+        <h3>${card.name}</h3>
+        <div>${createdDate.toDateString()} - ${expiryDate.toDateString()}</div>
+        <div class="icons">
+          <a href="${card.insta}" target="_blank">Instagram</a>
+          <a href="${card.art}" target="_blank">Art Link</a>
+        </div>
+        <div class="art-images">
+          ${card.arts.map(a => `<img src="${a}" />`).join('')}
+        </div>
+        ${expired ? '<button onclick="showPayPopup()">Pay Now</button>' : ''}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function showPayPopup() {
+    document.getElementById('payPopup').style.display = 'flex';
+  }
+
+  function renderCategoryChips() {
+    const container = document.getElementById('categoryChips');
+    const uniqueCategories = [...new Set(storedCards.map(c => c.category || 'Uncategorized'))];
+    container.innerHTML = '';
+    uniqueCategories.forEach(cat => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = cat;
+      chip.onclick = () => filterByCategory(cat);
+      container.appendChild(chip);
+    });
+  }
+
+  function filterByCategory(cat) {
+    const cards = document.querySelectorAll(".card");
+    cards.forEach(card => {
+      const c = card.getAttribute("data-category");
+      card.style.display = (c === cat) ? "block" : "none";
+    });
+  }
+
+  function searchByName() {
+    const query = document.getElementById("searchInput").value.toLowerCase();
+    const cards = document.querySelectorAll(".card");
+    cards.forEach(card => {
+      const name = card.querySelector("h3")?.innerText.toLowerCase() || "";
+      card.style.display = name.includes(query) ? "block" : "none";
+    });
+  }
+
+  window.onload = () => {
+    loginSection.style.display = 'block';
+  };
+</script>
+
+</body>
+</html>
