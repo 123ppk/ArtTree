@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ArtTree - Your Link to Artfruit</title>
   <style>
     * { box-sizing: border-box; }
@@ -18,40 +17,127 @@
       padding: 1em;
       background: #8e44ad;
       color: white;
+      position: relative;
     }
     header h1 { margin: 0; font-size: 2em; }
     header p { margin: 0.2em 0; font-style: italic; }
 
+    /* Container for header buttons */
+    #headerButtons {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    #headerButtons button {
+      background: #b47ed6;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: 1em;
+      transition: background-color 0.3s ease;
+    }
+    #headerButtons button:hover {
+      background: #914bbd;
+    }
+
     .container {
-      max-width: 800px;
+      max-width: 1000px;
       margin: auto;
       padding: 1em;
+      text-align: center;
+    }
+
+    .login-section, .admin-panel {
+      display: none;
+    }
+
+    input, button {
+      margin: 0.5em 0;
+      padding: 0.7em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      font-family: inherit;
+    }
+
+    input { width: 100%; }
+
+    button {
+      background: #b47ed6;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
     }
 
     .card {
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin: 1em 0;
+      margin: 1em;
       padding: 1em;
       text-align: center;
       position: relative;
+      flex: 1 1 45%;
+      max-width: 48%;
+    }
+
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .card img {
-      max-width: 100px;
-      height: 100px;
+      width: 140px;
+      height: 140px;
       object-fit: cover;
-      border-radius: 50%;
+      border-radius: 12px;
+      transition: transform 0.3s ease;
+      cursor: zoom-in;
+      user-select: none;
+    }
+
+    /* Increased zoom scale for profile images */
+    .card img.zoomed {
+      transform: scale(3);
+      z-index: 999;
+      position: relative;
+      cursor: zoom-out;
+    }
+
+    .card .art-images {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+	padding:25px;
     }
 
     .card .art-images img {
-      width: 60px;
-      margin: 5px;
-      height: 60px;
+      width: 100px;
+      height: 100px;
       object-fit: cover;
       border-radius: 8px;
+      margin: 5px;
+      transition: transform 0.3s ease;
       cursor: zoom-in;
+      user-select: none;
+    }
+
+    /* Increased zoom scale for art images */
+    .card .art-images img.zoomed {
+      transform: scale(2.8);
+      z-index: 999;
+      position: relative;
+      cursor: zoom-out;
     }
 
     .icons {
@@ -62,6 +148,21 @@
       margin: 0 10px;
       color: #8e44ad;
       font-weight: bold;
+      text-decoration: none;
+    }
+
+    .icons a:hover {
+      text-decoration: underline;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      cursor: pointer;
+      font-size: 20px;
+      color: red;
+      user-select: none;
     }
 
     #payPopup {
@@ -72,7 +173,16 @@
       background: rgba(0,0,0,0.6);
       justify-content: center;
       align-items: center;
-      z-index: 999;
+      z-index: 9999;
+      display: flex;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #payPopup.show {
+      visibility: visible;
+      opacity: 1;
     }
 
     #payPopup .popup-inner {
@@ -83,40 +193,94 @@
       max-width: 300px;
     }
 
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 9999;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.85);
-      cursor: zoom-out;
-      user-select: none;
-      align-items: center;
-      justify-content: center;
+    .chip-container {
+      padding: 10px;
+      text-align: center;
     }
 
-    .modal img {
-      max-width: 90%;
-      max-height: 90vh;
-      border-radius: 12px;
-      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    .chip {
+      display: inline-block;
+      padding: 8px 14px;
+      background: #8e44ad;
+      color: white;
+      border-radius: 20px;
+      margin: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+
+    .chip:hover {
+      background: #6c318b;
+    }
+
+    #searchInput {
+      max-width: 300px;
+      margin: 10px auto;
+      display: none; /* Hidden initially */
+      padding: 0.7em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-family: inherit;
+      font-size: 1em;
+    }
+
+    @media (max-width: 768px) {
+      .card {
+        max-width: 100%;
+      }
+
+      .card img,
+      .card .art-images img {
+        width: 100px;
+        height: 100px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .card img,
+      .card .art-images img {
+        width: 90px;
+        height: 90px;
+      }
     }
   </style>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
 <header>
   <h1>ArtTree</h1>
   <p>Your link to the artfruit 🍇</p>
+  <div id="headerButtons">
+    <button id="loginHeaderBtn" onclick="showLoginPopup()">Login</button>
+    <button id="logoutBtn" style="display:none;" onclick="logout()">Logout</button>
+  </div>
 </header>
 
 <div class="container">
-  <div id="userCardView"></div>
+
+  <div class="login-section" id="loginSection" style="display:none;">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Enter email" autocomplete="username"/>
+    <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" />
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <h2>Add Artist Card</h2>
+    <input type="text" id="artistName" placeholder="Artist Name" />
+    <input type="text" id="artistCategory" placeholder="Enter Category" />
+    <input type="text" id="instaLink" placeholder="Instagram Link" />
+    <input type="text" id="artLink" placeholder="Portfolio/Art Link" />
+    <input type="file" id="profilePic" accept="image/*" />
+    <label>Upload up to 10 Art Images</label>
+    <input type="file" id="artImages" accept="image/*" multiple />
+    <button onclick="addCard()">Add Artist Card</button>
+    <hr>
+  </div>
+
+  <div class="card-container" id="cardList"></div>
 </div>
 
 <div id="payPopup">
@@ -125,80 +289,186 @@
     <p>This card has expired. Please renew to unlock more features.</p>
     <img src="https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=upi://pay?pa=youremail@upi&pn=ArtTree&am=99&cu=INR" alt="GPay QR" />
     <br><br>
-    <button onclick="document.getElementById('payPopup').style.display='none'">Close</button>
+    <button onclick="hidePayPopup()">Close</button>
   </div>
 </div>
 
-<div id="imgModal" class="modal" onclick="closeModal()">
-  <img id="modalImg" />
-</div>
-
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDKxW2RqlVN6Hafx7WdehTuQIk5KScpIeo",
-    authDomain: "arttree-f1d9e.firebaseapp.com",
-    projectId: "arttree-f1d9e",
-    storageBucket: "arttree-f1d9e.appspot.com",
-    messagingSenderId: "454767883548",
-    appId: "1:454767883548:web:298a8d060e0d0fc1db36d9",
-    measurementId: "G-L77JE0T68Q"
-  };
+  const loginSection = document.getElementById('loginSection');
+  const adminPanel = document.getElementById('adminPanel');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const loginHeaderBtn = document.getElementById('loginHeaderBtn');
+  const cardList = document.getElementById('cardList');
+  const payPopup = document.getElementById('payPopup');
+  const adminEmail = 'admin@arttree.com';
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  const storedCards = JSON.parse(localStorage.getItem('artistCards') || '[]');
+  let userType = '';
 
-  function showUserView(cards) {
-    const list = document.getElementById('userCardView');
-    list.innerHTML = '';
-    cards.forEach((card) => {
-      const createdDate = new Date(card.created);
-      const expiryDate = new Date(createdDate);
-      expiryDate.setMonth(createdDate.getMonth() + 3);
-      const now = new Date();
-      const expired = now > expiryDate;
-
-      list.innerHTML += `
-        <div class="card" onclick="${expired ? 'showPayPopup()' : ''}">
-          <img src="${card.profile}" />
-          <h3>${card.name}</h3>
-          <div>${createdDate.toDateString()} - ${expiryDate.toDateString()}</div>
-          <div class="icons">
-            <a href="${card.insta}" target="_blank">Instagram</a>
-            <a href="${card.art}" target="_blank">Art Link</a>
-          </div>
-          <div class="art-images">
-            ${card.arts.map(a => `<img src="${a}" onclick="zoomImage('${a}')" />`).join('')}
-          </div>
-        </div>`;
-    });
+  function showLoginPopup(){
+    loginSection.style.display = 'block';
+    adminPanel.style.display = 'none';
+    loginSection.style.position = 'fixed';
+    loginSection.style.top = '50%';
+    loginSection.style.left = '50%';
+    loginSection.style.transform = 'translate(-50%, -50%)';
+    loginSection.style.background = '#fff';
+    loginSection.style.padding = '20px';
+    loginSection.style.borderRadius = '12px';
+    loginSection.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+    loginSection.style.zIndex = '10000';
   }
 
-  function zoomImage(src) {
-    const modal = document.getElementById("imgModal");
-    const modalImg = document.getElementById("modalImg");
-    modalImg.src = src;
-    modal.style.display = "flex";
+  function hideLoginPopup(){
+    loginSection.style.display = 'none';
+    loginSection.style.position = '';
+    loginSection.style.top = '';
+    loginSection.style.left = '';
+    loginSection.style.transform = '';
+    loginSection.style.background = '';
+    loginSection.style.padding = '';
+    loginSection.style.borderRadius = '';
+    loginSection.style.boxShadow = '';
+    loginSection.style.zIndex = '';
   }
 
-  function closeModal() {
-    document.getElementById("imgModal").style.display = "none";
+  function logout() {
+    userType = '';
+    hideLoginPopup();
+    adminPanel.style.display = 'none';
+    logoutBtn.style.display = 'none';
+    loginHeaderBtn.style.display = 'inline-block';
+    showAllCards();
   }
 
-  function showPayPopup() {
-    document.getElementById('payPopup').style.display = 'flex';
-  }
+  function login() {
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value.trim();
+    if (!email || !password) return alert("Fill all fields");
 
-  async function loadCardsFromFirestore() {
-    try {
-      const snapshot = await db.collection('artistCards').get();
-      const storedCards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      showUserView(storedCards);
-    } catch (e) {
-      alert('Error loading cards: ' + e.message);
+    if (email === adminEmail) {
+      userType = 'admin';
+      hideLoginPopup();
+      adminPanel.style.display = 'block';
+      logoutBtn.style.display = 'inline-block';
+      loginHeaderBtn.style.display = 'none';
+      showAllCards(true);
+    } else {
+      alert("Wrong email or password");
     }
   }
 
-  window.onload = loadCardsFromFirestore;
+  function resizeAndReadImage(file, callback) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        const scale = 300 / Math.max(img.width, img.height);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL("image/jpeg", 0.7));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function addCard() {
+    const name = document.getElementById('artistName').value;
+    const category = document.getElementById('artistCategory').value.trim() || 'Uncategorized';
+    const insta = document.getElementById('instaLink').value;
+    const art = document.getElementById('artLink').value;
+    const profileFile = document.getElementById('profilePic').files[0];
+    const artFiles = document.getElementById('artImages').files;
+
+    if (!name || !insta || !art || !profileFile || artFiles.length < 1) {
+      return alert("Please fill all fields and add images");
+    }
+
+    resizeAndReadImage(profileFile, (profileData) => {
+      let artDataList = [];
+      let loaded = 0;
+      for (let i = 0; i < artFiles.length && i < 10; i++) {
+        resizeAndReadImage(artFiles[i], (imgData) => {
+          artDataList.push(imgData);
+          loaded++;
+          if (loaded === Math.min(artFiles.length, 10)) {
+            const createdDate = new Date().toISOString();
+            const card = { name, category, insta, art, profile: profileData, arts: artDataList, created: createdDate };
+            storedCards.push(card);
+            localStorage.setItem('artistCards', JSON.stringify(storedCards));
+            showAllCards(true);
+          }
+        });
+      }
+    });
+  }
+
+  // showAdmin param: true means admin logged in (show delete buttons & add form), false = public view
+  function showAllCards(showAdmin = false) {
+    cardList.innerHTML = '';
+    storedCards.forEach((card, index) => {
+      const createdDate = new Date(card.created);
+      const expiryDate = new Date(createdDate);
+      expiryDate.setMonth(createdDate.getMonth() + 3);
+      const expired = new Date() > expiryDate;
+
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.setAttribute("data-category", card.category || 'Uncategorized');
+
+      div.innerHTML = `
+        ${showAdmin ? `<span class="close-btn" onclick="deleteCard(${index})" title="Delete this artist card">×</span>` : ''}
+        <img src="${card.profile}" onclick="toggleZoom(this)" alt="Profile Image"/>
+        <h3>${card.name}</h3>
+        <div>${createdDate.toDateString()} - ${expiryDate.toDateString()}</div>
+        <div class="icons">
+          <a href="${card.insta}" target="_blank" rel="noopener noreferrer">Instagram</a>
+          <a href="${card.art}" target="_blank" rel="noopener noreferrer">Art Link</a>
+        </div>
+        <div class="art-images">
+          ${card.arts.map(a => `<img src="${a}" onclick="toggleZoom(this)" alt="Art Image" />`).join('')}
+        </div>
+        ${expired && !showAdmin ? '<button onclick="showPayPopup()">Pay Now</button>' : ''}
+      `;
+      cardList.appendChild(div);
+    });
+
+    // Show/hide admin panel and buttons accordingly
+    adminPanel.style.display = showAdmin ? 'block' : 'none';
+  }
+
+  function toggleZoom(img) {
+    document.querySelectorAll('.zoomed').forEach(el => {
+      if (el !== img) el.classList.remove('zoomed');
+    });
+    img.classList.toggle('zoomed');
+  }
+
+  function deleteCard(index) {
+    if (confirm("Delete this artist card?")) {
+      storedCards.splice(index, 1);
+      localStorage.setItem('artistCards', JSON.stringify(storedCards));
+      showAllCards(true);
+    }
+  }
+
+  function showPayPopup() {
+    payPopup.classList.add('show');
+  }
+
+  function hidePayPopup() {
+    payPopup.classList.remove('show');
+  }
+
+  // On page load, show public cards and login button
+  window.onload = () => {
+    loginHeaderBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    showAllCards(false);
+  };
 </script>
 
 </body>
