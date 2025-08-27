@@ -1,502 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ArtTree - Your Link to Artfruit</title>
-  <style>
-    /* === तुमचा मूळ CSS जसाचा तसा === */
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #fdf6f0;
-      color: #333;
-    }
-    header {
-      text-align: center;
-      padding: 1em;
-      background: #8e44ad;
-      color: white;
-      position: relative;
-    }
-    header h1 { margin: 0; font-size: 2em; }
-    header p { margin: 0.2em 0; font-style: italic; }
-
-    #headerButtons {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    #headerButtons button {
-      background: #b47ed6;
-      border: none;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      font-family: inherit;
-      font-size: 1em;
-      transition: background-color 0.3s ease;
-    }
-    #headerButtons button:hover {
-      background: #914bbd;
-    }
-
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      padding: 1em;
-      text-align: center;
-    }
-
-    .login-section, .admin-panel {
-      display: none;
-    }
-
-    input, button {
-      margin: 0.5em 0;
-      padding: 0.7em;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 1em;
-      font-family: inherit;
-    }
-
-    input { width: 100%; }
-
-    button {
-      background: #b47ed6;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin: 1em;
-      padding: 1em;
-      text-align: center;
-      position: relative;
-      flex: 1 1 45%;
-      max-width: 48%;
-    }
-
-    .card-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .card img {
-      width: 140px;
-      height: 140px;
-      object-fit: cover;
-      border-radius: 12px;
-      transition: transform 0.3s ease;
-      cursor: zoom-in;
-      user-select: none;
-    }
-
-    .card img.zoomed {
-      transform: scale(3);
-      z-index: 999;
-      position: relative;
-      cursor: zoom-out;
-    }
-
-    .card .art-images {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 25px;
-    }
-
-    .card .art-images img {
-      width: 100px;
-      height: 100px;
-      object-fit: cover;
-      border-radius: 8px;
-      margin: 5px;
-      transition: transform 0.3s ease;
-      cursor: zoom-in;
-      user-select: none;
-    }
-
-    .card .art-images img.zoomed {
-      transform: scale(2.8);
-      z-index: 999;
-      position: relative;
-      cursor: zoom-out;
-    }
-
-    .icons {
-      margin-top: 1em;
-    }
-
-    .icons a {
-      margin: 0 10px;
-      color: #8e44ad;
-      font-weight: bold;
-      text-decoration: none;
-    }
-
-    .icons a:hover {
-      text-decoration: underline;
-    }
-
-    .close-btn {
-      position: absolute;
-      top: 5px;
-      right: 10px;
-      cursor: pointer;
-      font-size: 20px;
-      color: red;
-      user-select: none;
-    }
-
-    /* === Mobile Responsive Fixes - ONLY added === */
-    @media (max-width: 600px) {
-      .card {
-        max-width: 100% !important;
-        flex: 1 1 100% !important;
-        margin: 0.5em 0 !important;
-      }
-      header h1 {
-        font-size: 1.5em !important;
-      }
-      #headerButtons {
-        position: static !important;
-        justify-content: center;
-        margin-top: 10px;
-      }
-      #headerButtons button {
-        padding: 6px 12px !important;
-        font-size: 0.9em !important;
-      }
-      .card img {
-        width: 120px !important;
-        height: 120px !important;
-      }
-      .card .art-images img {
-        width: 80px !important;
-        height: 80px !important;
-        margin: 3px !important;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marriage Card Application</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+  header { text-align: center; padding: 20px; background: #f8f8f8; font-size: 24px; font-weight: bold; position: relative; }
+  #logoutBtn { position: absolute; top: 15px; right: 20px; background: none; border: none; color: hotpink; font-size: 14px; cursor: pointer; font-weight: bold; }
+  .container { max-width: 1200px; margin: auto; padding: 15px; }
+  .login-box, .form-box { background: #fff; padding: 20px; margin: 10px auto; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 400px; text-align: center; }
+  input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; }
+  button { background: hotpink; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 10px; cursor: pointer; font-weight: bold; }
+  button:hover { background: deeppink; }
+  .search-bar { text-align: center; margin: 15px 0; }
+  .search-bar input { width: 50%; max-width: 400px; }
+  .card-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+  .card { width: calc(20% - 15px); background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: left; position: relative; }
+  .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; cursor: zoom-in; }
+  .card h3 { margin: 5px 0; font-size: 18px; }
+  .card p { margin: 3px 0; font-size: 14px; }
+  .card button { width: auto; padding: 5px 10px; margin-top: 5px; font-size: 12px; margin-right: 4px; }
+  @media(max-width: 1024px){ .card { width: calc(33.3% - 15px); } }
+  @media(max-width: 768px){ .card { width: calc(50% - 15px); } .search-bar input { width: 90%; } }
+  @media(max-width: 480px){ .card { width: 100%; } }
+</style>
 </head>
 <body>
-
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"></script>
-
-<header>
-  <h1>ArtTree</h1>
-  <p>Your link to the artfruit 🍇</p>
-  <div id="headerButtons">
-    <button id="loginHeaderBtn" onclick="showLoginPopup()">Login</button>
-    <button id="logoutBtn" style="display:none;" onclick="logout()">Logout</button>
-  </div>
-</header>
+<header>💍 Jodimazi <button id="logoutBtn" style="display:none;" onclick="logout()">Logout</button></header>
 
 <div class="container">
-
-  <div class="login-section" id="loginSection" style="display:none;">
+  <div class="login-box" id="loginBox">
     <h2>Login</h2>
-    <input type="email" id="email" placeholder="Enter email" autocomplete="username" />
-    <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" />
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
     <button onclick="login()">Login</button>
   </div>
 
-  <div class="admin-panel" id="adminPanel">
-    <h2>Add Artist Card</h2>
-    <input type="text" id="artistName" placeholder="Artist Name" />
-    <input type="text" id="artistCategory" placeholder="Enter Category" />
-    <input type="text" id="instaLink" placeholder="Instagram Link" />
-    <input type="text" id="artLink" placeholder="Portfolio/Art Link" />
-    <input type="month" id="monthStart" placeholder="Month Start Date" />
-    <input type="month" id="monthEnd" placeholder="Month End Date" />
-    <input type="file" id="profilePic" accept="image/*" />
-    <label>Upload up to 10 Art Images</label>
-    <input type="file" id="artImages" accept="image/*" multiple />
-    <button onclick="addCard()">Add Artist Card</button>
-    <hr />
+  <div class="form-box" id="formBox" style="display:none;">
+    <h2>Add Marriage Card</h2>
+    <input type="text" id="name" placeholder="Name">
+    <input type="text" id="address" placeholder="Address">
+    <input type="text" id="education" placeholder="Education">
+    <input type="number" id="salary" placeholder="Salary">
+    <input type="number" id="age" placeholder="Age">
+    <select id="gender">
+      <option value="">Select Gender</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+    </select>
+    <input type="text" id="city" placeholder="City">
+    <input type="text" id="contact" placeholder="Contact">
+    <input type="date" id="startDate">
+    <input type="date" id="endDate">
+    <input type="file" id="photo">
+    <input type="email" id="userEmail" placeholder="User Email">
+    <input type="password" id="userPassword" placeholder="User Password">
+    <button onclick="addCard()">Add Card</button>
   </div>
 
-  <div class="card-container" id="cardList"></div>
+  <div class="search-bar" style="display:none;">
+    <input type="text" id="searchInput" placeholder="Search by name..." onkeyup="searchCards()">
+  </div>
+
+  <div class="card-grid" id="cardGrid"></div>
 </div>
 
+<!-- ✅ Firebase SDK add करा -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
 <script>
-  // Firebase config - Change these to your Firebase project config
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID",
+let currentUser=null;
+const adminEmail="jodi@admin.com";
+const adminPass="jodi123";
+
+// ✅ Firebase Config (तुझं project config टाक)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+function login(){
+  const email=document.getElementById("email").value;
+  const pass=document.getElementById("password").value;
+  if(email===adminEmail && pass===adminPass){
+    currentUser={role:"admin",email};
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("formBox").style.display="block";
+    document.querySelector(".search-bar").style.display="block";
+    document.getElementById("logoutBtn").style.display="inline";
+    loadCards();
+  } else {
+    let users=JSON.parse(localStorage.getItem("users"))||[];
+    let user=users.find(u=>u.email===email && u.password===pass);
+    if(user){ currentUser={role:"user",email:user.email,gender:user.gender}; }
+    else { alert("Invalid login"); return; }
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("formBox").style.display="none";
+    document.querySelector(".search-bar").style.display="block";
+    document.getElementById("logoutBtn").style.display="inline";
+    loadCards();
+  }
+}
+
+function logout(){
+  currentUser=null;
+  document.getElementById("loginBox").style.display="block";
+  document.getElementById("formBox").style.display="none";
+  document.querySelector(".search-bar").style.display="none";
+  document.getElementById("logoutBtn").style.display="none";
+  document.getElementById("cardGrid").innerHTML="";
+}
+
+function resizeImage(file,callback){
+  const reader=new FileReader();
+  reader.onload=function(event){
+    const img=new Image();
+    img.onload=function(){
+      const canvas=document.createElement("canvas");
+      const ctx=canvas.getContext("2d");
+      const MAX_WIDTH=400;
+      const scaleSize=MAX_WIDTH/img.width;
+      canvas.width=MAX_WIDTH;
+      canvas.height=img.height*scaleSize;
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      callback(canvas.toDataURL("image/jpeg",0.7));
+    }
+    img.src=event.target.result;
+  }
+  reader.readAsDataURL(file);
+}
+
+function addCard(){
+  const file=document.getElementById("photo").files[0];
+  if(file){ resizeImage(file,function(resized){ saveCardData(resized); }); }
+  else { saveCardData(""); }
+}
+
+function saveCardData(photoData){
+  const card={
+    id: Date.now(),
+    name: document.getElementById("name").value,
+    address: document.getElementById("address").value,
+    education: document.getElementById("education").value,
+    salary: document.getElementById("salary").value,
+    age: document.getElementById("age").value,
+    gender: document.getElementById("gender").value,
+    city: document.getElementById("city").value,
+    contact: document.getElementById("contact").value,
+    startDate: document.getElementById("startDate").value,
+    endDate: document.getElementById("endDate").value,
+    photo: photoData,
+    userEmail: document.getElementById("userEmail").value,
+    userPassword: document.getElementById("userPassword").value
   };
+  let cards=JSON.parse(localStorage.getItem("cards"))||[];
+  cards.push(card);
+  localStorage.setItem("cards",JSON.stringify(cards));
 
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  // ✅ Firestore मध्ये पण save करा
+  db.collection("cards").add(card).then(()=>console.log("Synced to Firebase"));
 
-  // Elements
-  const loginSection = document.getElementById("loginSection");
-  const adminPanel = document.getElementById("adminPanel");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const loginHeaderBtn = document.getElementById("loginHeaderBtn");
-  const cardList = document.getElementById("cardList");
-  const adminEmail = "admin@arttree.com";
-
-  // Cache cards
-  let storedCards = [];
-
-  // Show login popup
-  function showLoginPopup() {
-    loginSection.style.display = "block";
-    adminPanel.style.display = "none";
-    loginSection.style.position = "fixed";
-    loginSection.style.top = "50%";
-    loginSection.style.left = "50%";
-    loginSection.style.transform = "translate(-50%, -50%)";
-    loginSection.style.background = "#fff";
-    loginSection.style.padding = "20px";
-    loginSection.style.borderRadius = "12px";
-    loginSection.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-    loginSection.style.zIndex = "10000";
+  let users=JSON.parse(localStorage.getItem("users"))||[];
+  if(!users.find(u=>u.email===card.userEmail)){
+    users.push({email:card.userEmail,password:card.userPassword,gender:card.gender});
+    localStorage.setItem("users",JSON.stringify(users));
   }
+  clearForm();
+  loadCards();
+}
 
-  function hideLoginPopup() {
-    loginSection.style.display = "none";
-    loginSection.style.position = "";
-    loginSection.style.top = "";
-    loginSection.style.left = "";
-    loginSection.style.transform = "";
-    loginSection.style.background = "";
-    loginSection.style.padding = "";
-    loginSection.style.borderRadius = "";
-    loginSection.style.boxShadow = "";
-    loginSection.style.zIndex = "";
-  }
+function clearForm(){
+  ["name","address","education","salary","age","gender","city","contact","startDate","endDate","photo","userEmail","userPassword"].forEach(id=>document.getElementById(id).value="");
+}
 
-  // Logout function
-  function logout() {
-    userType = "";
-    hideLoginPopup();
-    adminPanel.style.display = "none";
-    logoutBtn.style.display = "none";
-    loginHeaderBtn.style.display = "inline-block";
-    showAllCards(false);
-  }
+function editCard(id){
+  let cards=JSON.parse(localStorage.getItem("cards"))||[];
+  const card=cards.find(c=>c.id===id);
+  if(!card) return;
+  document.getElementById("name").value=card.name;
+  document.getElementById("address").value=card.address;
+  document.getElementById("education").value=card.education;
+  document.getElementById("salary").value=card.salary;
+  document.getElementById("age").value=card.age;
+  document.getElementById("gender").value=card.gender;
+  document.getElementById("city").value=card.city;
+  document.getElementById("contact").value=card.contact;
+  document.getElementById("startDate").value=card.startDate;
+  document.getElementById("endDate").value=card.endDate;
+  document.getElementById("userEmail").value=card.userEmail;
+  document.getElementById("userPassword").value=card.userPassword;
+  document.getElementById("formBox").scrollIntoView({behavior:"smooth"});
+}
 
-  // User type
-  let userType = "";
+function saveCard(id){
+  let cards=JSON.parse(localStorage.getItem("cards"))||[];
+  const index=cards.findIndex(c=>c.id===id);
+  if(index===-1) return;
+  cards[index].name=document.getElementById("name").value;
+  cards[index].address=document.getElementById("address").value;
+  cards[index].education=document.getElementById("education").value;
+  cards[index].salary=document.getElementById("salary").value;
+  cards[index].age=document.getElementById("age").value;
+  cards[index].gender=document.getElementById("gender").value;
+  cards[index].city=document.getElementById("city").value;
+  cards[index].contact=document.getElementById("contact").value;
+  cards[index].startDate=document.getElementById("startDate").value;
+  cards[index].endDate=document.getElementById("endDate").value;
+  cards[index].userEmail=document.getElementById("userEmail").value;
+  cards[index].userPassword=document.getElementById("userPassword").value;
+  localStorage.setItem("cards",JSON.stringify(cards));
 
-  // Login function
-  function login() {
-    const email = document.getElementById("email").value.trim().toLowerCase();
-    const password = document.getElementById("password").value.trim();
-    if (!email || !password) {
-      alert("Fill all fields");
-      return;
-    }
+  // ✅ Firebase update (overwrite करून)
+  db.collection("cards").doc(String(id)).set(cards[index]);
 
-    // Simple check for admin user
-    if (email === adminEmail && password === "admin123") {
-      userType = "admin";
-      hideLoginPopup();
-      adminPanel.style.display = "block";
-      logoutBtn.style.display = "inline-block";
-      loginHeaderBtn.style.display = "none";
-      loadCardsFromFirestore();
-    } else {
-      alert("Wrong email or password");
-    }
-  }
+  loadCards();
+  alert("Card updated successfully!");
+}
 
-  // Resize image + convert to base64
-  function resizeAndReadImage(file, callback) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const img = new Image();
-      img.onload = function () {
-        const canvas = document.createElement("canvas");
-        const maxSize = 300;
-        let width = img.width;
-        let height = img.height;
+function deleteCard(id){
+  if(!confirm("Delete this card?")) return;
+  let cards=JSON.parse(localStorage.getItem("cards"))||[];
+  cards=cards.filter(c=>c.id!==id);
+  localStorage.setItem("cards",JSON.stringify(cards));
 
-        if (width > height) {
-          if (width > maxSize) {
-            height *= maxSize / width;
-            width = maxSize;
-          }
-        } else {
-          if (height > maxSize) {
-            width *= maxSize / height;
-            height = maxSize;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        callback(canvas.toDataURL("image/jpeg", 0.7));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
+  // ✅ Firestore delete करा
+  db.collection("cards").where("id","==",id).get().then(snapshot=>{
+    snapshot.forEach(doc=>db.collection("cards").doc(doc.id).delete());
+  });
 
-  // Add card + sync with Firestore
-  function addCard() {
-    const name = document.getElementById("artistName").value.trim();
-    const category = document.getElementById("artistCategory").value.trim() || "Uncategorized";
-    const insta = document.getElementById("instaLink").value.trim();
-    const art = document.getElementById("artLink").value.trim();
-    const monthStart = document.getElementById("monthStart").value;
-    const monthEnd = document.getElementById("monthEnd").value;
-    const profileFile = document.getElementById("profilePic").files[0];
-    const artFiles = document.getElementById("artImages").files;
+  loadCards();
+}
 
-    if (!name || !insta || !art || !profileFile || artFiles.length < 1 || !monthStart || !monthEnd) {
-      alert("Please fill all fields and add images including Month Start and End dates");
-      return;
-    }
+function loadCards(){
+  let cards=JSON.parse(localStorage.getItem("cards"))||[];
 
-    resizeAndReadImage(profileFile, (profileData) => {
-      let artDataList = [];
-      let loaded = 0;
-      const maxArts = Math.min(artFiles.length, 10);
-      for (let i = 0; i < maxArts; i++) {
-        resizeAndReadImage(artFiles[i], (imgData) => {
-          artDataList.push(imgData);
-          loaded++;
-          if (loaded === maxArts) {
-            const createdDate = new Date().toISOString();
-            const card = {
-              name,
-              category,
-              insta,
-              art,
-              monthStart,
-              monthEnd,
-              profile: profileData,
-              arts: artDataList,
-              created: createdDate,
-            };
-            db.collection("artistCards")
-              .add(card)
-              .then(() => {
-                alert("Artist card saved successfully!");
-                clearForm();
-                loadCardsFromFirestore();
-              })
-              .catch((e) => alert("Error saving card: " + e.message));
-          }
-        });
-      }
+  // ✅ Firestore मधून सुद्धा घेऊ
+  db.collection("cards").get().then(snapshot=>{
+    snapshot.forEach(doc=>{
+      const data=doc.data();
+      if(!cards.find(c=>c.id===data.id)) cards.push(data);
     });
-  }
+    localStorage.setItem("cards",JSON.stringify(cards));
 
-  // Clear form after add
-  function clearForm() {
-    document.getElementById("artistName").value = "";
-    document.getElementById("artistCategory").value = "";
-    document.getElementById("instaLink").value = "";
-    document.getElementById("artLink").value = "";
-    document.getElementById("monthStart").value = "";
-    document.getElementById("monthEnd").value = "";
-    document.getElementById("profilePic").value = "";
-    document.getElementById("artImages").value = "";
-  }
+    const today=new Date();
+    cards=cards.filter(c=>{
+      let expiry=new Date(c.startDate);
+      expiry.setFullYear(expiry.getFullYear()+1);
+      return new Date()<=expiry;
+    });
 
-  // Load cards from Firestore
-  async function loadCardsFromFirestore() {
-    try {
-      const snapshot = await db.collection("artistCards").orderBy("created", "desc").get();
-      storedCards = [];
-      snapshot.forEach((doc) => {
-        storedCards.push({ ...doc.data(), docId: doc.id });
-      });
-      showAllCards(userType === "admin");
-    } catch (e) {
-      alert("Error loading cards: " + e.message);
+    if(currentUser.role==="user"){
+      cards=cards.filter(c=>currentUser.gender==="Male"?c.gender==="Female":c.gender==="Male");
     }
-  }
 
-  // Delete card
-  function deleteCard(index) {
-    if (confirm("Delete this artist card?")) {
-      const docId = storedCards[index]?.docId;
-      if (!docId) {
-        alert("Card not found in database");
-        return;
+    const grid=document.getElementById("cardGrid");
+    grid.innerHTML="";
+    cards.forEach(card=>{
+      const div=document.createElement("div");
+      div.className="card";
+      let adminButtons="";
+      if(currentUser.role==="admin"){
+        adminButtons=`<button onclick="editCard(${card.id})">Edit</button>
+                      <button onclick="saveCard(${card.id})">Save</button>
+                      <button onclick="deleteCard(${card.id})">Delete</button>`;
       }
-      db.collection("artistCards")
-        .doc(docId)
-        .delete()
-        .then(() => {
-          alert("Card deleted successfully");
-          loadCardsFromFirestore();
-        })
-        .catch((e) => alert("Error deleting card: " + e.message));
-    }
-  }
-
-  // Show cards on page
-  function showAllCards(showAdmin = false) {
-    cardList.innerHTML = "";
-
-    storedCards.forEach((card, index) => {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.setAttribute("data-category", card.category || "Uncategorized");
-
-      div.innerHTML = `
-        ${showAdmin ? `<span class="close-btn" onclick="deleteCard(${index})" title="Delete this artist card">×</span>` : ''}
-        <img src="${card.profile}" onclick="toggleZoom(this)" alt="Profile Image"/>
+      div.innerHTML=`
+        <img src="${card.photo||'https://via.placeholder.com/150'}" onclick="zoomImage(this)">
         <h3>${card.name}</h3>
-        <div><strong>Month Start:</strong> ${card.monthStart || '-'}</div>
-        <div><strong>Month End:</strong> ${card.monthEnd || '-'}</div>
-        <div class="icons">
-          <a href="${card.insta}" target="_blank" rel="noopener noreferrer">Instagram</a>
-          <a href="${card.art}" target="_blank" rel="noopener noreferrer">Art Link</a>
-        </div>
-        <div class="art-images">
-          ${card.arts.map(a => `<img src="${a}" onclick="toggleZoom(this)" alt="Art Image" />`).join('')}
-        </div>
+        <p>${card.address}</p>
+        <p>${card.education}</p>
+        <p>${card.salary}</p>
+        <p>${card.age} | ${card.gender}</p>
+        <p>${card.city}</p>
+        <p>${card.contact}</p>
+        ${adminButtons}
       `;
-      cardList.appendChild(div);
+      grid.appendChild(div);
     });
+  });
+}
 
-    adminPanel.style.display = showAdmin ? "block" : "none";
-  }
+function zoomImage(img){
+  img.style.transform=img.style.transform==="scale(2)"?"scale(1)":"scale(2)";
+  img.style.transition="transform 0.3s ease";
+}
 
-  // Zoom image toggler
-  function toggleZoom(img) {
-    document.querySelectorAll('.zoomed').forEach(el => {
-      if(el !== img) el.classList.remove('zoomed');
-    });
-    img.classList.toggle('zoomed');
-  }
-
-  // On page load: show public cards and login button, load from Firestore
-  window.onload = () => {
-    loginHeaderBtn.style.display = "inline-block";
-    logoutBtn.style.display = "none";
-    loadCardsFromFirestore();
-  };
+function searchCards(){
+  const q=document.getElementById("searchInput").value.toLowerCase();
+  const cards=document.querySelectorAll(".card");
+  cards.forEach(card=>{
+    const name=card.querySelector("h3").innerText.toLowerCase();
+    card.style.display=name.includes(q)?"block":"none";
+  });
+}
 </script>
-
 </body>
 </html>
