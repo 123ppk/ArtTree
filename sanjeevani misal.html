@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+
+<!-- Firebase App (Core SDK) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+
+<!-- Realtime Database SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+  // ---------- FIREBASE CONFIG ----------
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
+  };
+
+  // Firebase initialize
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+</script>
+
+
+
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sanjivani — Misal Booking App</title>
+<style>
+
+
+
+
+
+:root{--green:#0b7a3a;--dark-green:#065a2a;--btn-green:#15a84b;--card-border:#d0d0d0;--muted:#666;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial}
+body{margin:0;background:linear-gradient(180deg,#fbfff9,#f4fff6);color:#1b1b1b}
+header{background:var(--dark-green);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:800;letter-spacing:1px;font-size:20px}.logo span{background:var(--green);padding:6px 10px;border-radius:6px}
+.controls{display:flex;gap:8px;align-items:center}
+.btn{background:var(--btn-green);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}.btn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.15)}
+.container{max-width:1100px;margin:22px auto;padding:0 16px}
+.topbar{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.search{flex:1;margin-right:12px}input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #ddd}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:18px;max-height:600px;overflow-y:auto;padding-right:4px}
+.card{background:#fff;border:1px solid var(--card-border);border-radius:10px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,0.03)}
+.card img{width:100%;height:150px;object-fit:cover;border-radius:8px}
+.card .title{font-weight:700;margin-top:8px}
+.card .desc{color:var(--muted);font-size:13px;margin-top:6px}
+.card .price{font-weight:800;margin-top:8px}
+.card .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.outline-btn{background:transparent;border:1px solid var(--card-border);padding:8px;border-radius:8px;cursor:pointer}
+.muted{color:var(--muted);font-size:13px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:50}
+.modal{background:#fff;border-radius:10px;padding:18px;max-width:720px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,0.2)}
+.modal h3{margin-top:0}
+.form-row{display:flex;gap:10px;margin-bottom:8px}
+.form-row>*{flex:1}label{font-size:13px;color:var(--muted)}input,select,textarea{padding:8px;border-radius:8px;border:1px solid #ddd;width:100%}
+.small{font-size:13px}
+.menu-table{width:100%;border-collapse:collapse;margin-top:8px;max-width:400px;overflow-x:auto;}
+.menu-table th,.menu-table td{border:1px solid #eee;padding:8px;text-align:left}
+.header-brand{display:flex;align-items:center;gap:10px}
+.logo-badge{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--green),var(--dark-green));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+.inline-help{font-size:12px;color:#999}
+.barcode{display:flex;align-items:center;gap:8px;margin-top:8px}
+.order-list{margin-top:12px;max-height:400px;overflow-y:auto;padding-right:4px}
+footer{margin:40px 0;text-align:center;color:#888}
+@media(max-width:600px){.form-row{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-brand">
+    <div class="logo-badge">S</div>
+    <div class="logo"><span>SANJIVANI</span></div>
+  </div>
+<div class="controls">
+  <button class="btn" id="openAddCard" style="display:none">Add Card</button>
+  <button class="btn ghost" id="openMenu" style="display:none">Menu</button>
+  <button class="btn" id="loginBtn">Login</button>
+</div>
+
+
+
+
+
+
+</header>
+<div class="container">
+  <div class="topbar">
+    <div class="search"><input type="text" id="searchInput" placeholder="Search cards or items..." /></div>
+    <div class="muted">Unlimited cards • saves locally</div>
+  </div>
+  <div id="menuPreview" class="card" style="margin-top:14px;">
+    <h3>Menu & Prices</h3>
+    <p class="inline-help">Default categories and prices (editable by Admin)</p>
+    <table class="menu-table" id="menuTable">
+      <thead><tr><th>Category / Item</th><th>Price (₹)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="grid" id="cardsGrid"></div>
+  <div id="ordersContainer" class="card" style="display:none;margin-top:18px">
+    <h3>My Orders</h3>
+    <div id="myOrders" class="order-list"></div>
+  </div>
+</div>
+<footer>Built for quick local demos • Keep in one HTML file</footer>
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+// ---------- LOCAL STORAGE KEYS ----------
+const LS_CARDS='misal_cards_v1',LS_MENU='misal_menu_v1',LS_ORDERS='misal_orders_v1';
+const defaultMenu=[{name:'Misal Plate',price:90},{name:'Vada Pav',price:40},{name:'Vadapav (Double)',price:60},{name:'Pav (single)',price:10}];
+let cards=JSON.parse(localStorage.getItem(LS_CARDS)||'[]'),
+    menu=JSON.parse(localStorage.getItem(LS_MENU)||JSON.stringify(defaultMenu)),
+    orders=JSON.parse(localStorage.getItem(LS_ORDERS)||'[]');
+
+const cardsGrid=document.getElementById('cardsGrid'),
+      menuTableBody=document.querySelector('#menuTable tbody'),
+      modalBackdrop=document.getElementById('modalBackdrop'),
+      modalContent=document.getElementById('modalContent'),
+      searchInput=document.getElementById('searchInput'),
+      ordersContainer=document.getElementById('ordersContainer'),
+      myOrdersDiv=document.getElementById('myOrders'),
+      openAddCardBtn=document.getElementById('openAddCard'),
+      openMenuBtn=document.getElementById('openMenu'),
+      loginBtn=document.getElementById('loginBtn');
+
+let isAdmin=false;
+const ADMIN_PASSWORD='admin123'; // change password here
+
+// ---------- UTIL ----------
+function escapeHtml(s){return String(s).replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;","/>":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+function saveJSON(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function readFilesAsDataURL(files,limit=3){const arr=Array.from(files||[]).slice(0,limit);return Promise.all(arr.map(f=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f);})))}
+function unique(arr){return [...new Set(arr)]}
+
+// ---------- RENDER ----------
+function renderMenu(){
+  menuTableBody.innerHTML='';
+  menu.forEach(it=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${escapeHtml(it.name)}</td><td>₹ ${Number(it.price).toFixed(0)}</td>`;
+    menuTableBody.appendChild(tr);
+  })
+}
+
+function renderCards(filter=''){
+  cardsGrid.innerHTML='';
+  const list=cards.filter(c=>!filter||c.title.toLowerCase().includes(filter.toLowerCase())||c.category.toLowerCase().includes(filter.toLowerCase()));
+  list.forEach(card=>{
+    const div=document.createElement('div');div.className='card';
+    const img=card.images&&card.images[0]?`<img src="${card.images[0]}" alt="${escapeHtml(card.title)}">`:`<div style="height:150px;background:#f6f6f6;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa">No image</div>`;
+    const bookedBy=unique(orders.filter(o=>o.cardId===card.id).map(o=>escapeHtml(o.name))).join(', ');
+    div.innerHTML=`${img}
+      <div class="title">${escapeHtml(card.title)}</div>
+      <div class="desc">${escapeHtml(card.category)} • ${escapeHtml(card.description||'')}</div>
+      <div class="price">₹ ${Number(card.price).toFixed(0)}</div>
+      ${bookedBy?`<div class="muted small">Booked by: ${bookedBy}</div>`:''}
+      <div class="actions">
+        <button class="btn" data-id="${card.id}" onclick="openBuy(event)">Buy / Pay</button>
+        ${isAdmin?`<button class="outline-btn" onclick="editCard('${card.id}')">Edit</button>
+        <button class="outline-btn" onclick="deleteCard('${card.id}')">Delete</button>`:''}
+      </div>`;
+    cardsGrid.appendChild(div);
+  });
+  if(list.length===0){cardsGrid.innerHTML='<div class="card">No cards yet.</div>'}
+}
+
+function ensureOrdersVisible(){
+  if(orders.length>0){ordersContainer.style.display='block'}
+  else{ordersContainer.style.display='none'}
+}
+function renderOrders(){
+  myOrdersDiv.innerHTML='';
+  if(orders.length===0){myOrdersDiv.innerHTML='<div class="muted">No orders yet.</div>';ensureOrdersVisible();return;}
+  orders.forEach(o=>{
+    const d=document.createElement('div');d.className='card';d.style.marginBottom='8px';
+    d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div>
+        <div style="font-weight:800">${escapeHtml(o.title)}</div>
+        <div class="muted">Order: <strong>${o.id}</strong> • Qty: ${o.qty} • ₹ ${o.total}</div>
+        <div class="muted">By: <strong>${escapeHtml(o.name)}</strong> • ${new Date(o.time).toLocaleString()}</div>
+        <div class="muted">Mobile: ${escapeHtml(o.mobile||'')}</div>
+      </div>
+      <div style="text-align:right;min-width:140px">
+        <div class="muted">Status</div>
+        <div style="font-weight:800;color:${o.served?'green':'orange'}">${o.served?'Served':'Waiting'}</div>
+        ${isAdmin?`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="outline-btn" onclick="toggleServe('${o.id}')">${o.served?'Mark Pending':'Mark Served'}</button>
+          <button class="outline-btn" onclick="adminEditOrder('${o.id}')">Edit</button>
+          <button class="outline-btn" onclick="deleteOrder('${o.id}')">Delete</button>
+        </div>`:''}
+      </div>
+    </div>`;
+    myOrdersDiv.appendChild(d);
+  });
+  ensureOrdersVisible();
+}
+
+// ---------- MODAL ----------
+function showModal(html){modalContent.innerHTML=html;modalBackdrop.style.display='flex'}
+function closeModal(){modalBackdrop.style.display='none';modalContent.innerHTML='';}
+modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)closeModal();})
+
+// ---------- ADD CARD ----------
+openAddCardBtn.addEventListener('click',()=>{
+  showModal(`<h3>Create / Add Card</h3>
+    <div class="form-row">
+      <div><label>Title</label><input id="cardTitle" placeholder="Eg. Misal Combo"/></div>
+      <div><label>Category</label><input id="cardCategory" placeholder="Eg. Misal / Vadapav"/></div>
+    </div>
+    <div class="form-row">
+      <div><label>Price (₹)</label><input id="cardPrice" type="number"/></div>
+      <div><label>Qty in combo (optional)</label><input id="cardQty" type="number"/></div>
+    </div>
+    <div><label>Description</label><textarea id="cardDesc" rows="3" placeholder="Short description"></textarea></div>
+    <div style="margin-top:8px">
+      <label>Upload up to 3 images</label>
+      <input id="cardImages" type="file" accept="image/*" multiple />
+      <div class="inline-help">Images are saved locally (base64). Keep them small for demo.</div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn" id="saveCardBtn">Save Card</button>
+      <button class="outline-btn" onclick="closeModal()">Cancel</button>
+    </div>`);
+  document.getElementById('saveCardBtn').addEventListener('click',async()=>{
+    const title=document.getElementById('cardTitle').value.trim();
+    const category=document.getElementById('cardCategory').value.trim()||'General';
+    const price=Number(document.getElementById('cardPrice').value)||0;
+    const description=document.getElementById('cardDesc').value.trim();
+    const files=document.getElementById('cardImages').files;
+    if(!title){alert('Enter title');return}
+    const imgs=await readFilesAsDataURL(files,3);
+    const id='C'+Date.now().toString().slice(-8);
+    const card={id,title,category,price,description,images:imgs};
+    cards.unshift(card);saveJSON(LS_CARDS,cards);
+    closeModal();renderCards(searchInput.value);
+  });
+});
+
+// ---------- MENU EDITOR (ADMIN) ----------
+openMenuBtn.addEventListener('click',()=>{
+  const rows=menu.map((m,i)=>`
+    <tr>
+      <td><input data-i="${i}" data-k="name" value="${escapeHtml(m.name)}"/></td>
+      <td><input data-i="${i}" data-k="price" type="number" value="${Number(m.price)}"/></td>
+      <td>${isAdmin?`<button class="outline-btn" onclick="removeMenuItem(${i})">Delete</button>`:''}</td>
+    </tr>`).join('');
+  showModal(`<h3>Menu Editor ${isAdmin?'(Admin)':''}</h3>
+    <p class="inline-help">Edit items and click Save. ${isAdmin?'You can add/remove items.':'Login as admin to edit.'}</p>
+    <table class="menu-table" style="width:100%">
+      <thead><tr><th>Item</th><th>Price (₹)</th><th style="width:100px">Actions</th></tr></thead>
+      <tbody id="menuEditBody">${rows||'<tr><td colspan="3" class="muted">No items</td></tr>'}</tbody>
+    </table>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      ${isAdmin?`<button class="outline-btn" onclick="addMenuRow()">Add Row</button>`:''}
+      <button class="btn" id="saveMenuBtn">${isAdmin?'Save Menu':'Close'}</button>
+    </div>`);
+  document.getElementById('saveMenuBtn').addEventListener('click',()=>{
+    if(!isAdmin){closeModal();return;}
+    const inputs=[...document.querySelectorAll('#menuEditBody input')];
+    const draft=[...document.querySelectorAll('#menuEditBody tr')].map(tr=>{
+      const name=tr.querySelector('input[data-k="name"]')?.value?.trim();
+      const price=Number(tr.querySelector('input[data-k="price"]')?.value||0);
+      return name?{name,price}:null;
+    }).filter(Boolean);
+    menu=draft;saveJSON(LS_MENU,menu);renderMenu();closeModal();
+  });
+});
+window.addMenuRow=function(){
+  const body=document.getElementById('menuEditBody');
+  const i=body.querySelectorAll('tr').length;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input data-i="${i}" data-k="name" placeholder="Item name"/></td>
+                <td><input data-i="${i}" data-k="price" type="number" placeholder="0"/></td>
+                <td><button class="outline-btn" onclick="this.closest('tr').remove()">Delete</button></td>`;
+  body.appendChild(tr);
+}
+window.removeMenuItem=function(i){
+  menu.splice(i,1);saveJSON(LS_MENU,menu);
+  // re-open to refresh UI quickly
+  closeModal();openMenuBtn.click();
+}
+
+// ---------- BUY / PAY ----------
+function openBuy(e){
+  const id=e.currentTarget.getAttribute('data-id');
+  const card=cards.find(c=>c.id===id);if(!card)return;
+  const uid=prompt('Enter your name (for receipt)')||'Guest';
+  const mob=prompt('Enter mobile number')||'';
+  const qty=Number(prompt('Quantity?','1'))||1;
+  const total=Number(card.price)*qty;
+
+  showModal(`<h3>Pay for ${escapeHtml(card.title)}</h3>
+    <p class="muted">Name: ${escapeHtml(uid)} • Mobile: ${escapeHtml(mob)} • Qty: ${qty}</p>
+    <p style="font-size:20px;font-weight:800">Total: ₹ ${total.toFixed(0)}</p>
+    <p class="inline-help">Click PAY to confirm order.</p>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" id="confirmPay">Pay</button>
+      <button class="outline-btn" onclick="closeModal()">Cancel</button>
+    </div>`);
+  document.getElementById('confirmPay').addEventListener('click',()=>{
+    const orderNo='S'+Date.now().toString().slice(-6)+Math.floor(Math.random()*90+10);
+    const order={id:orderNo,cardId:card.id,title:card.title,name:uid,mobile:mob,qty,total,served:false,time:new Date().toISOString()};
+    orders.unshift(order);saveJSON(LS_ORDERS,orders);
+
+    // Success screen with barcode + WhatsApp share
+    showModal(`<h3>Order Confirmed</h3>
+      <div class="muted">Product: <strong>${escapeHtml(card.title)}</strong></div>
+      <div class="muted">Qty: <strong>${qty}</strong> • Price: <strong>₹ ${total.toFixed(0)}</strong></div>
+      <div class="muted">Order No: <strong>${orderNo}</strong></div>
+      <div class="muted">Date/Time: ${new Date(order.time).toLocaleString()}</div>
+      <div class="barcode"><canvas id="bcanvas" width="320" height="64"></canvas><div class="inline-help">Show this to vendor</div></div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn" id="btnMyOrders">My Orders</button>
+        <button class="outline-btn" id="btnShareWA">Share on WhatsApp</button>
+        <button class="outline-btn" onclick="closeModal()">Close</button>
+      </div>`);
+    setTimeout(()=>{const c=document.getElementById('bcanvas');if(c)drawFakeBarcode(c,orderNo)},50);
+
+    document.getElementById('btnMyOrders').addEventListener('click',()=>{closeModal();ensureOrdersVisible();renderOrders();ordersContainer.scrollIntoView({behavior:'smooth'})});
+    document.getElementById('btnShareWA').addEventListener('click',()=>{
+      const msg=`Order Confirmed!
+Product: ${card.title}
+Order No: ${orderNo}
+Name: ${uid}
+Mobile: ${mob}
+Qty: ${qty}
+Total: ₹ ${total.toFixed(0)}
+Date: ${new Date(order.time).toLocaleString()}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
+    });
+
+    renderOrders();renderCards(searchInput.value);
+  });
+}
+
+function drawFakeBarcode(canvas,text){
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#000';
+  const seed=text.split('').map(ch=>ch.charCodeAt(0)).reduce((a,b)=>a+b,0);
+  let x=6;for(let i=0;i<70;i++){const w=2+((seed+i*7)%4);if(((seed+i)%3)===0)ctx.fillRect(x,4,w,canvas.height-20);x+=w+1;}
+  ctx.font='12px sans-serif';ctx.fillText(text,8,canvas.height-6);
+}
+
+// ---------- EDIT CARD ----------
+function editCard(id){
+  if(!isAdmin)return;
+  const card=cards.find(c=>c.id===id);if(!card)return;
+  showModal(`<h3>Edit Card</h3>
+    <div class="form-row">
+      <div><label>Title</label><input id="cardTitle" value="${escapeHtml(card.title)}"/></div>
+      <div><label>Category</label><input id="cardCategory" value="${escapeHtml(card.category)}"/></div>
+    </div>
+    <div class="form-row">
+      <div><label>Price (₹)</label><input id="cardPrice" type="number" value="${card.price}"/></div>
+    </div>
+    <div><label>Description</label><textarea id="cardDesc" rows="3">${escapeHtml(card.description||'')}</textarea></div>
+    <div style="margin-top:8px"><label>Upload up to 3 images</label><input id="cardImages" type="file" accept="image/*" multiple /></div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn" id="saveCardBtn">Save Card</button>
+      <button class="outline-btn" onclick="closeModal()">Cancel</button>
+    </div>`);
+  document.getElementById('saveCardBtn').addEventListener('click',async()=>{
+    const title=document.getElementById('cardTitle').value.trim();
+    const category=document.getElementById('cardCategory').value.trim()||'General';
+    const price=Number(document.getElementById('cardPrice').value)||0;
+    const description=document.getElementById('cardDesc').value.trim();
+    const files=document.getElementById('cardImages').files;
+    if(!title){alert('Enter title');return}
+    const imgs=files.length>0?await readFilesAsDataURL(files,3):card.images;
+    card.title=title;card.category=category;card.price=price;card.description=description;card.images=imgs;
+    saveJSON(LS_CARDS,cards);closeModal();renderCards(searchInput.value);
+  });
+}
+
+function deleteCard(id){if(!isAdmin)return;if(confirm('Delete this card?')){cards=cards.filter(c=>c.id!==id);saveJSON(LS_CARDS,cards);renderCards(searchInput.value);}}
+
+// ---------- ADMIN ORDER ACTIONS ----------
+function deleteOrder(id){if(!isAdmin)return;if(confirm('Delete this order?')){orders=orders.filter(o=>o.id!==id);saveJSON(LS_ORDERS,orders);renderOrders();renderCards(searchInput.value);}}
+function toggleServe(id){if(!isAdmin)return;const o=orders.find(x=>x.id===id);if(o){o.served=!o.served;saveJSON(LS_ORDERS,orders);renderOrders();}}
+function adminEditOrder(id){
+  if(!isAdmin)return;
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  showModal(`<h3>Edit Order</h3>
+    <div class="form-row"><div><label>Name</label><input id="oName" value="${escapeHtml(o.name)}"/></div><div><label>Mobile</label><input id="oMobile" value="${escapeHtml(o.mobile||'')}"/></div></div>
+    <div class="form-row"><div><label>Qty</label><input id="oQty" type="number" value="${o.qty}"/></div><div><label>Total (₹)</label><input id="oTotal" type="number" value="${o.total}"/></div></div>
+    <div class="form-row"><div><label>Status</label>
+      <select id="oServed"><option value="false"${!o.served?' selected':''}>Pending</option><option value="true"${o.served?' selected':''}>Served</option></select>
+    </div></div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn" id="saveOrderBtn">Save</button>
+      <button class="outline-btn" onclick="closeModal()">Cancel</button>
+    </div>`);
+  document.getElementById('saveOrderBtn').addEventListener('click',()=>{
+    o.name=document.getElementById('oName').value.trim()||o.name;
+    o.mobile=document.getElementById('oMobile').value.trim()||o.mobile;
+    o.qty=Number(document.getElementById('oQty').value)||o.qty;
+    o.total=Number(document.getElementById('oTotal').value)||o.total;
+    o.served=document.getElementById('oServed').value==='true';
+    saveJSON(LS_ORDERS,orders);closeModal();renderOrders();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+// ---------- ADMIN LOGIN ----------
+loginBtn.addEventListener('click',()=>{
+  if(!isAdmin){
+    const pass=prompt('Enter admin password');if(pass!==ADMIN_PASSWORD){alert('Wrong password');return;}
+    isAdmin=true;loginBtn.textContent='Logout';
+    // ✅ Admin login झाल्यावर Add Card / Menu दिसतील
+    document.getElementById('openAddCard').style.display='inline-block';
+    document.getElementById('openMenu').style.display='inline-block';
+  }else{
+    isAdmin=false;loginBtn.textContent='Login';
+    // ✅ Logout झाल्यावर Add Card / Menu hide
+    document.getElementById('openAddCard').style.display='none';
+    document.getElementById('openMenu').style.display='none';
+  }
+  renderCards();renderMenu();renderOrders();
+});
+
+// ---------- SEARCH ----------
+searchInput.addEventListener('input',()=>renderCards(searchInput.value));
+
+// ---------- INIT ----------
+renderMenu();renderCards();renderOrders();
+
+
+
+
+
+
+
+
+// ---------- FIREBASE SYNC ----------
+
+// Cards Sync
+function syncCardsToFirebase() {
+  db.ref("cards").set(cards);
+}
+db.ref("cards").on("value", snapshot => {
+  const data = snapshot.val();
+  if (data) {
+    cards = Object.values(data);
+    saveJSON(LS_CARDS, cards);
+    renderCards(searchInput.value);
+  }
+});
+
+// Menu Sync
+function syncMenuToFirebase() {
+  db.ref("menu").set(menu);
+}
+db.ref("menu").on("value", snapshot => {
+  const data = snapshot.val();
+  if (data) {
+    menu = Object.values(data);
+    saveJSON(LS_MENU, menu);
+    renderMenu();
+  }
+});
+
+// Orders Sync
+function syncOrdersToFirebase() {
+  db.ref("orders").set(orders);
+}
+db.ref("orders").on("value", snapshot => {
+  const data = snapshot.val();
+  if (data) {
+    orders = Object.values(data);
+    saveJSON(LS_ORDERS, orders);
+    renderOrders();
+  }
+});
+
+// --------- HOOK Local Save Functions to Firebase ---------
+const _saveJSON = saveJSON;
+saveJSON = function (key, value) {
+  _saveJSON(key, value);
+  if (key === LS_CARDS) syncCardsToFirebase();
+  if (key === LS_MENU) syncMenuToFirebase();
+  if (key === LS_ORDERS) syncOrdersToFirebase();
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
+
+ 
+
+
+
+
+</body>
+</html>
