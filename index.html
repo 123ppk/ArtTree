@@ -394,6 +394,40 @@ db.ref('menu').on('value',snap=>{
   const val = snap.val();
   if(val){menu=Object.values(val); saveJSON(LS_MENU,menu); renderMenu();}
 });
+ 
+ 
+
 </script>
+
+<script>
+// Save orders in localStorage
+function saveOrdersToLocalStorage() {
+  localStorage.setItem("orders", document.getElementById("ordersList").innerHTML);
+}
+
+// Load orders from localStorage
+function loadOrdersFromLocalStorage() {
+  const savedOrders = localStorage.getItem("orders");
+  if (savedOrders) {
+    document.getElementById("ordersList").innerHTML = savedOrders;
+  }
+}
+
+// Run when page is ready
+document.addEventListener("DOMContentLoaded", function () {
+  loadOrdersFromLocalStorage();
+
+  // Whenever any button is clicked, re-save orders
+  document.body.addEventListener("click", function (e) {
+    if (
+      e.target.tagName === "BUTTON" ||
+      e.target.closest("button") // in case of icons inside button
+    ) {
+      saveOrdersToLocalStorage();
+    }
+  });
+});
+</script>
+
 </body>
 </html>
