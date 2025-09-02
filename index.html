@@ -1,307 +1,399 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Marriage Card Application</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sanjivani — Misal Booking App</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
 <style>
-  body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
-  header { text-align: center; padding: 20px; background: #f8f8f8; font-size: 24px; font-weight: bold; position: relative; }
-  #logoutBtn { position: absolute; top: 15px; right: 20px; background: none; border: none; color: hotpink; font-size: 14px; cursor: pointer; font-weight: bold; }
-  .container { max-width: 1200px; margin: auto; padding: 15px; }
-  .login-box, .form-box { background: #fff; padding: 20px; margin: 10px auto; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 400px; text-align: center; }
-  input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; }
-  button { background: hotpink; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 10px; cursor: pointer; font-weight: bold; }
-  button:hover { background: deeppink; }
-  .search-bar { text-align: center; margin: 15px 0; }
-  .search-bar input { width: 50%; max-width: 400px; }
-  .card-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
-  .card { width: calc(20% - 15px); background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: left; position: relative; }
-  .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; cursor: zoom-in; }
-  .card h3 { margin: 5px 0; font-size: 18px; }
-  .card p { margin: 3px 0; font-size: 14px; }
-  .card button { width: auto; padding: 5px 10px; margin-top: 5px; font-size: 12px; margin-right: 4px; }
-  @media(max-width: 1024px){ .card { width: calc(33.3% - 15px); } }
-  @media(max-width: 768px){ .card { width: calc(50% - 15px); } .search-bar input { width: 90%; } }
-  @media(max-width: 480px){ .card { width: 100%; } }
+:root{--green:#0b7a3a;--dark-green:#065a2a;--btn-green:#15a84b;--card-border:#d0d0d0;--muted:#666;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial}
+body{margin:0;background:#fff;color:#1b1b1b}
+header{background:var(--dark-green);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:800;letter-spacing:1px;font-size:20px}.logo span{background:var(--green);padding:6px 10px;border-radius:6px}
+.controls{display:flex;gap:8px;align-items:center}
+.btn{background:var(--btn-green);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}.btn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.15)}
+.container{max-width:1100px;margin:22px auto;padding:0 16px}
+.topbar{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.search{flex:1;margin-right:12px}input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #ddd}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:18px;max-height:600px;overflow-y:auto;padding-right:4px}
+.card{background:#fff;border:1px solid var(--card-border);border-radius:10px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,0.03)}
+.card img{width:100%;height:150px;object-fit:cover;border-radius:8px}
+.card .title{font-weight:700;margin-top:8px}
+.card .desc{color:var(--muted);font-size:13px;margin-top:6px}
+.card .price{font-weight:800;margin-top:8px}
+.card .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.outline-btn{background:transparent;border:1px solid var(--card-border);padding:8px;border-radius:8px;cursor:pointer}
+.muted{color:var(--muted);font-size:13px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:50}
+.modal{background:#fff;border-radius:10px;padding:18px;max-width:720px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,0.2)}
+.modal h3{margin-top:0}
+.form-row{display:flex;gap:10px;margin-bottom:8px}
+.form-row>*{flex:1}label{font-size:13px;color:var(--muted)}input,select,textarea{padding:8px;border-radius:8px;border:1px solid #ddd;width:100%}
+.small{font-size:13px}
+.menu-table{width:100%;border-collapse:collapse;margin-top:8px;max-width:400px;overflow-x:auto;}
+.menu-table th,.menu-table td{border:1px solid #eee;padding:8px;text-align:left}
+.header-brand{display:flex;align-items:center;gap:10px}
+.logo-badge{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--green),var(--dark-green));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+.inline-help{font-size:12px;color:#999}
+.order-list{margin-top:12px;max-height:400px;overflow-y:auto;padding-right:4px}
+footer{margin:40px 0;text-align:center;color:#888}
+@media(max-width:600px){.form-row{flex-direction:column}}
+
+.status-waiting{color:#d97706;font-weight:600}
+.status-confirmed{color:#2563eb;font-weight:600}
+.status-completed{color:#059669;font-weight:600}
+.status-cancelled{color:#dc2626;font-weight:600}
 </style>
 </head>
 <body>
-<header>💍 Jodimazi <button id="logoutBtn" style="display:none;" onclick="logout()">Logout</button></header>
+<header>
+  <div class="header-brand">
+    <div class="logo-badge">S</div>
+    <div class="logo"><span>SANJIVANI</span></div>
+  </div>
+<div class="controls">
+  <button class="btn" id="openAddCard" style="display:none">Add Card</button>
+  <button class="btn ghost" id="openMenu" style="display:none">Menu</button>
+  <button class="btn" id="loginBtn">Login</button>
+  <button class="btn" id="viewOrdersBtn">My Orders</button>
+</div>
+</header>
 
 <div class="container">
-  <div class="login-box" id="loginBox">
-    <h2>Login</h2>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+  <div class="topbar">
+    <div class="search"><input type="text" id="searchInput" placeholder="Search cards or items..." /></div>
+    <div class="muted">Unlimited cards • saves locally</div>
   </div>
 
-  <div class="form-box" id="formBox" style="display:none;">
-    <h2>Add Marriage Card</h2>
-    <input type="text" id="name" placeholder="Name">
-    <input type="text" id="address" placeholder="Address">
-    <input type="text" id="education" placeholder="Education">
-    <input type="number" id="salary" placeholder="Salary">
-    <input type="number" id="age" placeholder="Age">
-    <select id="gender">
-      <option value="">Select Gender</option>
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-    </select>
-    <input type="text" id="city" placeholder="City">
-    <input type="text" id="contact" placeholder="Contact">
-    <input type="date" id="startDate">
-    <input type="date" id="endDate">
-    <input type="file" id="photo">
-    <input type="email" id="userEmail" placeholder="User Email">
-    <input type="password" id="userPassword" placeholder="User Password">
-    <button onclick="addCard()">Add Card</button>
+  <div id="menuPreview" class="card" style="margin-top:14px;">
+    <h3>Menu & Prices</h3>
+    <p class="inline-help">Default categories and prices (editable by Admin)</p>
+    <table class="menu-table" id="menuTable">
+      <thead><tr><th>Category / Item</th><th>Price (₹)</th></tr></thead>
+      <tbody></tbody>
+    </table>
   </div>
 
-  <div class="search-bar" style="display:none;">
-    <input type="text" id="searchInput" placeholder="Search by name..." onkeyup="searchCards()">
-  </div>
+  <div class="grid" id="cardsGrid"></div>
 
-  <div class="card-grid" id="cardGrid"></div>
+  <div id="ordersContainer" class="card" style="display:none;margin-top:18px">
+    <h3>My Orders</h3>
+    <div id="myOrders" class="order-list"></div>
+  </div>
 </div>
 
-<!-- ✅ Firebase SDK add करा -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+<footer>Built for quick local demos • Keep in one HTML file</footer>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modalContent"></div>
+</div>
 
 <script>
-let currentUser=null;
-const adminEmail="jodi@admin.com";
-const adminPass="jodi123";
-
-// ✅ Firebase Config (तुझं project config टाक)
+// ---------- FIREBASE CONFIG ----------
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
   projectId: "YOUR_PROJECT_ID",
   storageBucket: "YOUR_PROJECT_ID.appspot.com",
   messagingSenderId: "YOUR_SENDER_ID",
   appId: "YOUR_APP_ID"
 };
-
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db = firebase.database();
 
-function login(){
-  const email=document.getElementById("email").value;
-  const pass=document.getElementById("password").value;
-  if(email===adminEmail && pass===adminPass){
-    currentUser={role:"admin",email};
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("formBox").style.display="block";
-    document.querySelector(".search-bar").style.display="block";
-    document.getElementById("logoutBtn").style.display="inline";
-    loadCards();
-  } else {
-    let users=JSON.parse(localStorage.getItem("users"))||[];
-    let user=users.find(u=>u.email===email && u.password===pass);
-    if(user){ currentUser={role:"user",email:user.email,gender:user.gender}; }
-    else { alert("Invalid login"); return; }
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("formBox").style.display="none";
-    document.querySelector(".search-bar").style.display="block";
-    document.getElementById("logoutBtn").style.display="inline";
-    loadCards();
-  }
-}
+// ---------- STORAGE KEYS ----------
+const LS_CARDS='misal_cards_v1',LS_MENU='misal_menu_v1',LS_ORDERS='misal_orders_v1';
+const defaultMenu=[{name:'Misal Plate',price:90},{name:'Vada Pav',price:40},{name:'Vadapav (Double)',price:60},{name:'Pav (single)',price:10}];
+let cards=JSON.parse(localStorage.getItem(LS_CARDS)||'[]'),
+    menu=JSON.parse(localStorage.getItem(LS_MENU)||JSON.stringify(defaultMenu)),
+    orders=JSON.parse(localStorage.getItem(LS_ORDERS)||'[]');
 
-function logout(){
-  currentUser=null;
-  document.getElementById("loginBox").style.display="block";
-  document.getElementById("formBox").style.display="none";
-  document.querySelector(".search-bar").style.display="none";
-  document.getElementById("logoutBtn").style.display="none";
-  document.getElementById("cardGrid").innerHTML="";
-}
+const cardsGrid=document.getElementById('cardsGrid'),
+      menuTableBody=document.querySelector('#menuTable tbody'),
+      modalBackdrop=document.getElementById('modalBackdrop'),
+      modalContent=document.getElementById('modalContent'),
+      searchInput=document.getElementById('searchInput'),
+      ordersContainer=document.getElementById('ordersContainer'),
+      myOrdersDiv=document.getElementById('myOrders'),
+      openAddCardBtn=document.getElementById('openAddCard'),
+      openMenuBtn=document.getElementById('openMenu'),
+      loginBtn=document.getElementById('loginBtn');
 
-function resizeImage(file,callback){
-  const reader=new FileReader();
-  reader.onload=function(event){
-    const img=new Image();
-    img.onload=function(){
-      const canvas=document.createElement("canvas");
-      const ctx=canvas.getContext("2d");
-      const MAX_WIDTH=400;
-      const scaleSize=MAX_WIDTH/img.width;
-      canvas.width=MAX_WIDTH;
-      canvas.height=img.height*scaleSize;
-      ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      callback(canvas.toDataURL("image/jpeg",0.7));
-    }
-    img.src=event.target.result;
-  }
-  reader.readAsDataURL(file);
-}
+let isAdmin=false;
+const ADMIN_PASSWORD='admin123';
 
-function addCard(){
-  const file=document.getElementById("photo").files[0];
-  if(file){ resizeImage(file,function(resized){ saveCardData(resized); }); }
-  else { saveCardData(""); }
-}
+// ---------- UTIL ----------
+function escapeHtml(s){return String(s).replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;","/>":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+function saveJSON(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function readFilesAsDataURL(files,limit=3){const arr=Array.from(files||[]).slice(0,limit);return Promise.all(arr.map(f=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f);})))}
 
-function saveCardData(photoData){
-  const card={
-    id: Date.now(),
-    name: document.getElementById("name").value,
-    address: document.getElementById("address").value,
-    education: document.getElementById("education").value,
-    salary: document.getElementById("salary").value,
-    age: document.getElementById("age").value,
-    gender: document.getElementById("gender").value,
-    city: document.getElementById("city").value,
-    contact: document.getElementById("contact").value,
-    startDate: document.getElementById("startDate").value,
-    endDate: document.getElementById("endDate").value,
-    photo: photoData,
-    userEmail: document.getElementById("userEmail").value,
-    userPassword: document.getElementById("userPassword").value
-  };
-  let cards=JSON.parse(localStorage.getItem("cards"))||[];
-  cards.push(card);
-  localStorage.setItem("cards",JSON.stringify(cards));
+// ---------- RENDER ----------
+function renderMenu(){menuTableBody.innerHTML='';menu.forEach(it=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(it.name)}</td><td>₹ ${Number(it.price).toFixed(0)}</td>`;menuTableBody.appendChild(tr);})}
 
-  // ✅ Firestore मध्ये पण save करा
-  db.collection("cards").add(card).then(()=>console.log("Synced to Firebase"));
-
-  let users=JSON.parse(localStorage.getItem("users"))||[];
-  if(!users.find(u=>u.email===card.userEmail)){
-    users.push({email:card.userEmail,password:card.userPassword,gender:card.gender});
-    localStorage.setItem("users",JSON.stringify(users));
-  }
-  clearForm();
-  loadCards();
-}
-
-function clearForm(){
-  ["name","address","education","salary","age","gender","city","contact","startDate","endDate","photo","userEmail","userPassword"].forEach(id=>document.getElementById(id).value="");
-}
-
-function editCard(id){
-  let cards=JSON.parse(localStorage.getItem("cards"))||[];
-  const card=cards.find(c=>c.id===id);
-  if(!card) return;
-  document.getElementById("name").value=card.name;
-  document.getElementById("address").value=card.address;
-  document.getElementById("education").value=card.education;
-  document.getElementById("salary").value=card.salary;
-  document.getElementById("age").value=card.age;
-  document.getElementById("gender").value=card.gender;
-  document.getElementById("city").value=card.city;
-  document.getElementById("contact").value=card.contact;
-  document.getElementById("startDate").value=card.startDate;
-  document.getElementById("endDate").value=card.endDate;
-  document.getElementById("userEmail").value=card.userEmail;
-  document.getElementById("userPassword").value=card.userPassword;
-  document.getElementById("formBox").scrollIntoView({behavior:"smooth"});
-}
-
-function saveCard(id){
-  let cards=JSON.parse(localStorage.getItem("cards"))||[];
-  const index=cards.findIndex(c=>c.id===id);
-  if(index===-1) return;
-  cards[index].name=document.getElementById("name").value;
-  cards[index].address=document.getElementById("address").value;
-  cards[index].education=document.getElementById("education").value;
-  cards[index].salary=document.getElementById("salary").value;
-  cards[index].age=document.getElementById("age").value;
-  cards[index].gender=document.getElementById("gender").value;
-  cards[index].city=document.getElementById("city").value;
-  cards[index].contact=document.getElementById("contact").value;
-  cards[index].startDate=document.getElementById("startDate").value;
-  cards[index].endDate=document.getElementById("endDate").value;
-  cards[index].userEmail=document.getElementById("userEmail").value;
-  cards[index].userPassword=document.getElementById("userPassword").value;
-  localStorage.setItem("cards",JSON.stringify(cards));
-
-  // ✅ Firebase update (overwrite करून)
-  db.collection("cards").doc(String(id)).set(cards[index]);
-
-  loadCards();
-  alert("Card updated successfully!");
-}
-
-function deleteCard(id){
-  if(!confirm("Delete this card?")) return;
-  let cards=JSON.parse(localStorage.getItem("cards"))||[];
-  cards=cards.filter(c=>c.id!==id);
-  localStorage.setItem("cards",JSON.stringify(cards));
-
-  // ✅ Firestore delete करा
-  db.collection("cards").where("id","==",id).get().then(snapshot=>{
-    snapshot.forEach(doc=>db.collection("cards").doc(doc.id).delete());
-  });
-
-  loadCards();
-}
-
-function loadCards(){
-  let cards=JSON.parse(localStorage.getItem("cards"))||[];
-
-  // ✅ Firestore मधून सुद्धा घेऊ
-  db.collection("cards").get().then(snapshot=>{
-    snapshot.forEach(doc=>{
-      const data=doc.data();
-      if(!cards.find(c=>c.id===data.id)) cards.push(data);
-    });
-    localStorage.setItem("cards",JSON.stringify(cards));
-
-    const today=new Date();
-    cards=cards.filter(c=>{
-      let expiry=new Date(c.startDate);
-      expiry.setFullYear(expiry.getFullYear()+1);
-      return new Date()<=expiry;
-    });
-
-    if(currentUser.role==="user"){
-      cards=cards.filter(c=>currentUser.gender==="Male"?c.gender==="Female":c.gender==="Male");
-    }
-
-    const grid=document.getElementById("cardGrid");
-    grid.innerHTML="";
-    cards.forEach(card=>{
-      const div=document.createElement("div");
-      div.className="card";
-      let adminButtons="";
-      if(currentUser.role==="admin"){
-        adminButtons=`<button onclick="editCard(${card.id})">Edit</button>
-                      <button onclick="saveCard(${card.id})">Save</button>
-                      <button onclick="deleteCard(${card.id})">Delete</button>`;
-      }
-      div.innerHTML=`
-        <img src="${card.photo||'https://via.placeholder.com/150'}" onclick="zoomImage(this)">
-        <h3>${card.name}</h3>
-        <p>${card.address}</p>
-        <p>${card.education}</p>
-        <p>${card.salary}</p>
-        <p>${card.age} | ${card.gender}</p>
-        <p>${card.city}</p>
-        <p>${card.contact}</p>
+// ---------- RENDER CARDS ----------
+function renderCards(filter=''){
+  cardsGrid.innerHTML='';
+  const list=cards.filter(c=>!filter||c.title.toLowerCase().includes(filter.toLowerCase())||c.category.toLowerCase().includes(filter.toLowerCase()));
+  list.forEach(card=>{
+    const div=document.createElement('div');
+    div.className='card';
+    const img=card.images&&card.images[0]?`<img src="${card.images[0]}" alt="${escapeHtml(card.title)}">`:`<div style="height:150px;background:#f6f6f6;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa">No image</div>`;
+    let adminButtons = '';
+    if(isAdmin){adminButtons = `<button class="outline-btn" onclick="editCard('${card.id}')">Edit</button>
+                                <button class="outline-btn" onclick="deleteCard('${card.id}')">Delete</button>`;}
+    div.innerHTML=`${img}
+      <div class="title">${escapeHtml(card.title)}</div>
+      <div class="desc">${escapeHtml(card.category)} • ${escapeHtml(card.description||'')}</div>
+      <div class="price">₹ ${Number(card.price).toFixed(0)}</div>
+      <div class="actions">
+        <button class="btn" onclick="openBuy('${card.id}')">Buy / Pay</button>
         ${adminButtons}
-      `;
-      grid.appendChild(div);
-    });
+      </div>`;
+    cardsGrid.appendChild(div);
+  });
+  if(list.length===0){cardsGrid.innerHTML='<div class="card">No cards yet.</div>'}
+}
+
+// ---------- EDIT CARD ----------
+function editCard(cardId){
+  const card = cards.find(c=>c.id===cardId);
+  if(!card) return;
+  showModal(`
+    <h3>Edit Card — ${escapeHtml(card.title)}</h3>
+    <div class="form-row"><input id="editTitle" placeholder="Title" value="${escapeHtml(card.title)}"></div>
+    <div class="form-row"><input id="editCategory" placeholder="Category" value="${escapeHtml(card.category)}"></div>
+    <div class="form-row"><input id="editPrice" type="number" placeholder="Price" value="${card.price}"></div>
+    <div class="form-row"><textarea id="editDesc" placeholder="Description">${escapeHtml(card.description||'')}</textarea></div>
+    <div class="form-row"><input type="file" id="editImages" multiple accept="image/*"></div>
+    <button class="btn" onclick="saveCard('${card.id}')">Save</button>
+  `);
+}
+
+// ---------- SAVE CARD ----------
+function saveCard(cardId){
+  const card = cards.find(c=>c.id===cardId);
+  if(!card) return;
+  const title=document.getElementById('editTitle').value.trim();
+  const category=document.getElementById('editCategory').value.trim();
+  const price=Number(document.getElementById('editPrice').value||0);
+  const desc=document.getElementById('editDesc').value.trim();
+  const files=document.getElementById('editImages').files;
+  if(!title || !price){alert('Title आणि Price द्या'); return;}
+  readFilesAsDataURL(files).then(images=>{
+    if(images.length>0) card.images=images;
+    card.title=title; card.category=category; card.price=price; card.description=desc;
+    saveJSON(LS_CARDS,cards);
+    // Firebase update
+    db.ref('cards/'+card.id).set(card);
+    closeModal();
+    renderCards(searchInput.value);
   });
 }
 
-function zoomImage(img){
-  img.style.transform=img.style.transform==="scale(2)"?"scale(1)":"scale(2)";
-  img.style.transition="transform 0.3s ease";
+// ---------- DELETE CARD ----------
+function deleteCard(cardId){
+  if(!confirm('हा card delete करायचा आहे का?')) return;
+  cards = cards.filter(c=>c.id!==cardId);
+  saveJSON(LS_CARDS,cards);
+  db.ref('cards/'+cardId).remove();
+  renderCards(searchInput.value);
 }
 
-function searchCards(){
-  const q=document.getElementById("searchInput").value.toLowerCase();
-  const cards=document.querySelectorAll(".card");
-  cards.forEach(card=>{
-    const name=card.querySelector("h3").innerText.toLowerCase();
-    card.style.display=name.includes(q)?"block":"none";
+// ---------- MODAL ----------
+function showModal(html){modalContent.innerHTML=html;modalBackdrop.style.display='flex'}
+function closeModal(){modalBackdrop.style.display='none';modalContent.innerHTML='';}
+modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)closeModal();})
+
+// ---------- ORDERS ----------
+function renderOrders(){
+  if(orders.length===0){ordersContainer.style.display="none";return;}
+  ordersContainer.style.display="block";
+  myOrdersDiv.innerHTML="";
+  orders.slice().reverse().forEach(o=>{
+    const div=document.createElement("div");
+    div.className="card";
+    let statusClass="";
+    if(o.status==="Waiting") statusClass="status-waiting";
+    if(o.status==="Confirmed") statusClass="status-confirmed";
+    if(o.status==="Completed") statusClass="status-completed";
+    if(o.status==="Cancelled") statusClass="status-cancelled";
+    let adminControls = "";
+    if(isAdmin){
+      adminControls = `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="editOrder('${o.id}')">Edit</button>
+        <button class="outline-btn" onclick="deleteOrder('${o.id}')">Delete</button>
+      </div>`;
+    }
+    div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <b>${escapeHtml(o.product)}</b><br>
+          Order: <b>${o.id}</b> • Qty: <span class="order-qty">${o.qty||1}</span> • ₹ <span class="order-price">${o.price}</span><br>
+          By: <b class="order-buyer">${escapeHtml(o.buyer)}</b> • ${o.date}<br>
+          Mobile: <span class="order-mobile">${escapeHtml(o.mobile||'')}</span><br>
+          Status: <b class="${statusClass} order-status">${o.status}</b>
+        </div>
+      </div>
+      ${adminControls}`;
+    myOrdersDiv.appendChild(div);
   });
 }
+
+// ---------- ADMIN ORDER EDIT ----------
+function editOrder(orderId){
+  const order = orders.find(o=>o.id===orderId); if(!order) return;
+  showModal(`<h3>Edit Order — ${escapeHtml(order.product)}</h3>
+    <div class="form-row">
+      <input type="text" id="editBuyer" placeholder="Buyer Name" value="${escapeHtml(order.buyer)}">
+      <input type="text" id="editMobile" placeholder="Mobile" value="${escapeHtml(order.mobile||'')}">
+    </div>
+    <div class="form-row"><input type="number" id="editQty" placeholder="Quantity" value="${order.qty||1}" min="1"></div>
+    <div class="form-row">
+      <select id="editStatus">
+        <option ${order.status==='Waiting'?'selected':''}>Waiting</option>
+        <option ${order.status==='Confirmed'?'selected':''}>Confirmed</option>
+        <option ${order.status==='Completed'?'selected':''}>Completed</option>
+        <option ${order.status==='Cancelled'?'selected':''}>Cancelled</option>
+      </select>
+    </div>
+    <button class="btn" onclick="saveOrder('${order.id}')">Save</button>`);
+}
+
+function saveOrder(orderId){
+  const order = orders.find(o=>o.id===orderId); if(!order) return;
+  order.buyer=document.getElementById('editBuyer').value.trim();
+  order.mobile=document.getElementById('editMobile').value.trim();
+  order.qty=Number(document.getElementById('editQty').value||1);
+  order.price=(order.price/order.qty)*order.qty;
+  order.status=document.getElementById('editStatus').value;
+  saveJSON(LS_ORDERS,orders);
+  db.ref('orders/'+order.id).set(order);
+  closeModal();
+  renderOrders();
+}
+
+function deleteOrder(orderId){
+  if(!confirm("Delete this order?")) return;
+  orders = orders.filter(o=>o.id!==orderId);
+  saveJSON(LS_ORDERS,orders);
+  db.ref('orders/'+orderId).remove();
+  renderOrders();
+}
+
+// ---------- ADD CARD ----------
+openAddCardBtn.addEventListener("click", () => {
+  showModal(`<h3>Add Card</h3>
+    <div class="form-row"><input id="cardTitle" placeholder="Title"></div>
+    <div class="form-row"><input id="cardCategory" placeholder="Category"></div>
+    <div class="form-row"><input id="cardPrice" type="number" placeholder="Price"></div>
+    <div class="form-row"><textarea id="cardDesc" placeholder="Description"></textarea></div>
+    <div class="form-row"><input type="file" id="cardImages" multiple accept="image/*"></div>
+    <button class="btn" onclick="addCard()">Save</button>`);
+});
+
+function addCard() {
+  const title = document.getElementById("cardTitle").value.trim();
+  const category = document.getElementById("cardCategory").value.trim();
+  const price = Number(document.getElementById("cardPrice").value||0);
+  const desc = document.getElementById("cardDesc").value.trim();
+  const files = document.getElementById("cardImages").files;
+  if(!title || !price){alert("Title आणि Price द्या"); return;}
+  readFilesAsDataURL(files).then(images=>{
+    const id='c'+Date.now();
+    const card={id,title,category,price,description:desc,images};
+    cards.push(card);
+    saveJSON(LS_CARDS,cards);
+    db.ref('cards/'+id).set(card);
+    closeModal(); renderCards(searchInput.value);
+  });
+}
+
+// ---------- BUY / PAY ----------
+function openBuy(cardId){
+  const card = cards.find(c=>c.id===cardId);
+  if(!card) return;
+  showModal(`
+    <h3>Buy — ${escapeHtml(card.title)}</h3>
+    <div class="form-row">
+      <input type="text" id="buyerName" placeholder="Your name">
+      <input type="text" id="buyerMobile" placeholder="Mobile number">
+    </div>
+    <div class="form-row"><input type="number" id="qty" value="1" min="1"></div>
+    <button class="btn" onclick="placeOrder('${card.id}')">Confirm Order</button>
+  `);
+}
+
+function placeOrder(cardId){
+  const card = cards.find(c=>c.id===cardId);
+  const buyer = document.getElementById("buyerName").value.trim();
+  const mobile = document.getElementById("buyerMobile").value.trim();
+  const qty = Number(document.getElementById("qty").value||1);
+  if(!buyer){alert("Enter name");return;}
+
+  const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+  const order = { id: orderId, product: card.title, price: card.price*qty, qty, buyer, mobile, date: new Date().toLocaleString(), status:"Waiting" };
+  orders.push(order);
+  saveJSON(LS_ORDERS,orders);
+
+  const upiId = "yourupi@oksbi"; // 👉 तुझा UPI टाक
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=${upiId}&pn=Sanjivani&am=${order.price}`;
+
+  const waText = encodeURIComponent(`🛍️ Order Details\nOrder ID: ${order.id}\nProduct: ${order.product}\nQty: ${order.qty}\nAmount: ₹${order.price}\nBuyer: ${order.buyer}\nMobile: ${order.mobile}`);
+  const waLink = `https://wa.me/?text=${waText}`;
+
+  showModal(`
+    <h3>Order Confirmed ✅</h3>
+    <p><b>Order ID:</b> ${order.id}</p>
+    <p><b>Product:</b> ${escapeHtml(order.product)}</p>
+    <p><b>Qty:</b> ${order.qty} • <b>Total:</b> ₹${order.price}</p>
+    <p><b>Buyer:</b> ${escapeHtml(order.buyer)} (${escapeHtml(order.mobile)})</p>
+    <p><b>Status:</b> Waiting</p>
+    <h4>Scan & Pay with GPay</h4>
+    <img src="${qrUrl}" alt="GPay QR">
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+      <a class="btn" href="${waLink}" target="_blank">📲 Share on WhatsApp</a>
+      <button class="btn" onclick="closeModal()">Done</button>
+    </div>
+  `);
+
+  renderOrders();
+}
+
+
+
+
+
+// ---------- SEARCH ----------
+searchInput.addEventListener('input',()=>renderCards(searchInput.value));
+
+// ---------- LOGIN ----------
+loginBtn.addEventListener('click',()=>{
+  const pwd=prompt("Enter admin password:");
+  if(pwd===ADMIN_PASSWORD){isAdmin=true;openAddCardBtn.style.display='inline-block';openMenuBtn.style.display='inline-block';alert('Admin logged in'); renderCards(searchInput.value); renderOrders();}
+  else{alert('Wrong password');}
+});
+
+// ---------- INITIAL ----------
+renderMenu();
+renderCards();
+renderOrders();
+
+// ---------- LOAD FIREBASE DATA ----------
+db.ref('cards').on('value',snap=>{
+  const val = snap.val();
+  if(val){cards=Object.values(val); saveJSON(LS_CARDS,cards); renderCards(searchInput.value);}
+});
+db.ref('orders').on('value',snap=>{
+  const val = snap.val();
+  if(val){orders=Object.values(val); saveJSON(LS_ORDERS,orders); renderOrders();}
+});
+db.ref('menu').on('value',snap=>{
+  const val = snap.val();
+  if(val){menu=Object.values(val); saveJSON(LS_MENU,menu); renderMenu();}
+});
 </script>
 </body>
 </html>
