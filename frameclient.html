@@ -4,8 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Catalog — Admin / Client (Single File)</title>
+
+  <!-- ========= Inline CSS ========= -->
   <style>
-    /* Black & white minimalist theme — no outlines, clean cards */
     :root{ --bg:#fff; --fg:#000; --muted:#777; --card:#f7f7f7; --glass: rgba(0,0,0,0.06)}
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
@@ -17,14 +18,10 @@
     button{background:transparent;border:0;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600}
     .btn-primary{background:#000;color:#fff}
     .btn-muted{color:var(--muted)}
-
     main{padding:18px;display:grid;grid-template-columns:260px 1fr;gap:18px}
-    /* Sidebar (admin controls when logged in) */
     .sidebar{background:var(--card);padding:14px;border-radius:12px;min-height:140px}
     .panel-title{font-weight:700;margin-bottom:8px}
     .small{font-size:13px;color:var(--muted)}
-
-    /* Product grid */
     .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
     .search{flex:1;display:flex;gap:8px}
     .search input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--glass);background:transparent}
@@ -39,398 +36,250 @@
     .qtybox{display:flex;align-items:center;gap:6px}
     .qtybox button{padding:6px 8px;border-radius:8px;background:var(--glass)}
     .muted{color:var(--muted);font-size:13px}
-
-    /* Admin badges and controls */
     .admin-controls{display:flex;flex-direction:column;gap:8px}
     input,select,textarea{padding:10px;border-radius:8px;border:1px solid var(--glass);background:transparent}
     label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
-
-    /* Cart */
     .cart{position:fixed;right:18px;bottom:18px;background:#000;color:#fff;padding:10px 12px;border-radius:12px;display:flex;gap:10px;align-items:center}
     .cart-bubble{background:#fff;color:#000;padding:4px 8px;border-radius:999px;font-weight:700}
-
-    /* Modals */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:80}
     .modal{background:#fff;padding:16px;border-radius:12px;max-width:900px;width:96%;max-height:92vh;overflow:auto}
     .modal.show{display:block}
-
-    /* Image zoom viewer */
     .viewer{display:flex;flex-direction:column;align-items:center;gap:10px}
     .viewer img{max-width:100%;max-height:70vh;transform-origin:center center}
     .viewer .zoom-controls{display:flex;gap:8px}
-
-    /* Responsive adjustments */
     @media (max-width:900px){main{grid-template-columns:1fr;padding:12px} .sidebar{order:2} .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}}
   </style>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <div class="logo">BK</div>
-      <div>
-        <h1>Black & White Catalog</h1>
-        <div class="small">Client: <span id="clientName">Guest</span></div>
-      </div>
+
+<!-- ========= Header ========= -->
+<header>
+  <div class="brand">
+    <div class="logo">BK</div>
+    <div>
+      <h1>Black & White Catalog</h1>
+      <div class="small">Client: <span id="clientName">Guest</span></div>
     </div>
-    <div class="top-actions">
-      <button id="loginBtn" class="btn-primary">Admin Login</button>
-      <button id="addToCartBtn" class="btn-muted">Bag 🧾</button>
-    </div>
-  </header>
+  </div>
+  <div class="top-actions">
+    <button id="loginBtn" class="btn-primary">Admin Login</button>
+    <button id="addToCartBtn" class="btn-muted">Bag 🧾</button>
+  </div>
+</header>
 
-  <main>
-    <aside class="sidebar" id="sidebar">
-      <div class="panel-title">Admin Panel</div>
-      <div class="small">(Login to add / edit / publish products)</div>
-
-      <div id="adminArea" style="display:none;margin-top:10px">
-        <div class="admin-controls">
-          <label>Brand / S.no</label>
-          <input id="pSerial" placeholder="S.no or SKU" />
-          <label>Brand</label>
-          <input id="pBrand" placeholder="Brand" />
-          <label>Model</label>
-          <input id="pModel" placeholder="Model / Name" />
-          <label>Material Type</label>
-          <input id="pMaterial" placeholder="Material (eg. Cotton / Metal)" />
-          <label>Retail Price</label>
-          <input id="pPrice" type="number" placeholder="Retail price" />
-          <label>Application</label>
-          <input id="pApplication" placeholder="Use / Application" />
-          <label>Image (choose)</label>
-          <input id="pImage" type="file" accept="image/*" />
-          <div style="display:flex;gap:8px">
-            <button id="saveProduct" class="btn-primary">Add / Publish</button>
-            <button id="clearForm" class="btn-muted">Clear</button>
-          </div>
-        </div>
-        <hr style="margin:12px 0;border:none;border-top:1px dashed var(--glass)" />
-        <div>
-          <div class="small">Admin actions</div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="exportBtn" class="btn-muted">Export JSON</button>
-            <button id="importBtn" class="btn-muted">Import JSON</button>
-            <button id="logoutBtn" class="btn-muted">Logout</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="loginNotice" style="margin-top:12px">
-        <div class="small">Not logged in. Click login to open admin credentials.</div>
-      </div>
-    </aside>
-
-    <section>
-      <div class="toolbar">
-        <div class="search">
-          <input id="searchInput" placeholder="Search by brand, model, material, application..." />
-        </div>
+<!-- ========= Main Section ========= -->
+<main>
+  <aside class="sidebar" id="sidebar">
+    <div class="panel-title">Admin Panel</div>
+    <div class="small">(Login to add / edit / publish products)</div>
+    <div id="adminArea" style="display:none;margin-top:10px">
+      <div class="admin-controls">
+        <label>Brand / S.no</label><input id="pSerial" placeholder="S.no or SKU" />
+        <label>Brand</label><input id="pBrand" placeholder="Brand" />
+        <label>Model</label><input id="pModel" placeholder="Model / Name" />
+        <label>Material Type</label><input id="pMaterial" placeholder="Material (eg. Cotton / Metal)" />
+        <label>Retail Price</label><input id="pPrice" type="number" placeholder="Retail price" />
+        <label>Application</label><input id="pApplication" placeholder="Use / Application" />
+        <label>Image (choose)</label><input id="pImage" type="file" accept="image/*" />
         <div style="display:flex;gap:8px">
-          <button id="showAll" class="btn-muted">Show All</button>
-          <button id="publishedFilter" class="btn-muted">Published</button>
+          <button id="saveProduct" class="btn-primary">Add / Publish</button>
+          <button id="clearForm" class="btn-muted">Clear</button>
         </div>
       </div>
-
-      <div class="grid" id="productGrid"></div>
-    </section>
-  </main>
-
-  <div class="cart" id="cartBtn" title="Open cart" style="display:none">
-    <div>Cart</div>
-    <div class="cart-bubble" id="cartCount">0</div>
-  </div>
-
-  <!-- Modals -->
-  <div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal" role="dialog" aria-modal="true" id="modalContent">
-      <!-- populated by JS -->
+      <hr style="margin:12px 0;border:none;border-top:1px dashed var(--glass)" />
+      <div>
+        <div class="small">Admin actions</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="exportBtn" class="btn-muted">Export JSON</button>
+          <button id="importBtn" class="btn-muted">Import JSON</button>
+          <button id="logoutBtn" class="btn-muted">Logout</button>
+        </div>
+      </div>
     </div>
-  </div>
+    <div id="loginNotice" style="margin-top:12px">
+      <div class="small">Not logged in. Click login to open admin credentials.</div>
+    </div>
+  </aside>
 
-  <script>
-    // Single-file app: products + admin + cart, stored in localStorage
-    const LS_KEY = 'bw_catalog_v1';
-    const LS_CART = 'bw_cart_v1';
-    const ADMIN_USER = {user:'admin', pass:'admin123'}; // change as needed
+  <section>
+    <div class="toolbar">
+      <div class="search">
+        <input id="searchInput" placeholder="Search by brand, model, material, application..." />
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="showAll" class="btn-muted">Show All</button>
+        <button id="publishedFilter" class="btn-muted">Published</button>
+      </div>
+    </div>
 
-    // DOM refs
-    const loginBtn = document.getElementById('loginBtn');
-    const adminArea = document.getElementById('adminArea');
-    const loginNotice = document.getElementById('loginNotice');
-    const sidebar = document.getElementById('sidebar');
-    const saveProduct = document.getElementById('saveProduct');
-    const clearForm = document.getElementById('clearForm');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const pImage = document.getElementById('pImage');
-    const productGrid = document.getElementById('productGrid');
-    const modalBackdrop = document.getElementById('modalBackdrop');
-    const modalContent = document.getElementById('modalContent');
-    const cartBtn = document.getElementById('cartBtn');
-    const cartCount = document.getElementById('cartCount');
-    const addToCartBtn = document.getElementById('addToCartBtn');
-    const clientNameEl = document.getElementById('clientName');
-    const searchInput = document.getElementById('searchInput');
-    const showAll = document.getElementById('showAll');
-    const publishedFilter = document.getElementById('publishedFilter');
+    <div class="grid" id="productGrid"></div>
+  </section>
+</main>
 
-    let products = loadProducts();
-    let cart = loadCart();
-    let isAdmin = sessionStorage.getItem('bw_admin') === '1';
+<!-- ========= Cart ========= -->
+<div class="cart" id="cartBtn" title="Open cart" style="display:none">
+  <div>Cart</div>
+  <div class="cart-bubble" id="cartCount">0</div>
+</div>
 
-    // Initial render
-    renderUI();
+<!-- ========= Modals ========= -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" id="modalContent"></div>
+</div>
+
+<!-- ========= JS Inline ========= -->
+<script>
+  // ========== Constants ==========
+  const LS_KEY = 'bw_catalog_v1';
+  const LS_CART = 'bw_cart_v1';
+  const ADMIN_USER = {user:'admin', pass:'admin123'};
+
+  // ========== DOM References ==========
+  const loginBtn = document.getElementById('loginBtn');
+  const adminArea = document.getElementById('adminArea');
+  const loginNotice = document.getElementById('loginNotice');
+  const saveProduct = document.getElementById('saveProduct');
+  const clearForm = document.getElementById('clearForm');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const pImage = document.getElementById('pImage');
+  const productGrid = document.getElementById('productGrid');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const modalContent = document.getElementById('modalContent');
+  const cartBtn = document.getElementById('cartBtn');
+  const cartCount = document.getElementById('cartCount');
+  const addToCartBtn = document.getElementById('addToCartBtn');
+  const clientNameEl = document.getElementById('clientName');
+  const searchInput = document.getElementById('searchInput');
+  const showAll = document.getElementById('showAll');
+  const publishedFilter = document.getElementById('publishedFilter');
+
+  // ========== App State ==========
+  let products = JSON.parse(localStorage.getItem(LS_KEY)||'[]');
+  let cart = JSON.parse(localStorage.getItem(LS_CART)||'{}');
+  let isAdmin = sessionStorage.getItem('bw_admin')==='1';
+
+  // ========== Helper Functions ==========
+  function saveProducts(){ localStorage.setItem(LS_KEY, JSON.stringify(products)); }
+  function saveCart(){ localStorage.setItem(LS_CART, JSON.stringify(cart)); }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+  // ========== Render UI ==========
+  function renderUI(){ 
+    adminArea.style.display=isAdmin?'block':'none'; 
+    loginNotice.style.display=isAdmin?'none':'block'; 
+    loginBtn.innerText=isAdmin?'Admin':'Admin Login';
+    clientNameEl.innerText=localStorage.getItem('bw_client_name')||'Guest';
     renderProducts();
     renderCartBubble();
+  }
 
-    // Utilities
-    function saveProducts(){ localStorage.setItem(LS_KEY, JSON.stringify(products)); }
-    function loadProducts(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '[]') }catch(e){return []} }
-    function saveCart(){ localStorage.setItem(LS_CART, JSON.stringify(cart)); }
-    function loadCart(){ try{ return JSON.parse(localStorage.getItem(LS_CART) || '{}') }catch(e){return {}} }
+  function toast(msg){ const t=document.createElement('div'); t.textContent=msg; t.style.position='fixed'; t.style.right='18px'; t.style.bottom='88px'; t.style.background='#000'; t.style.color='#fff'; t.style.padding='8px 12px'; t.style.borderRadius='8px'; t.style.zIndex=999; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
 
-    function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  // ========== Initial Demo Data ==========
+  if(products.length===0){
+    products.push({ id:uid(), serial:'001', brand:'Acme', model:'Classic', material:'Stainless', price:1299, application:'Home', image:'', published:true, created:Date.now() });
+    saveProducts();
+  }
 
-    // Admin login flow
-    loginBtn.addEventListener('click', ()=>{
-      if(isAdmin){ // show quick admin menu
-        openModal(adminQuick());
-      } else {
-        openModal(loginForm());
+  // ========== Render Products ==========
+  function renderProducts(filter){
+    const search = (searchInput.value||'').toLowerCase();
+    productGrid.innerHTML='';
+    products.filter(p=>{
+      if(filter==='published' && !p.published) return false;
+      if(search){
+        const s=[p.brand,p.model,p.material,p.application].join(' ').toLowerCase();
+        if(!s.includes(search)) return false;
       }
+      return true;
+    }).forEach(p=>{
+      const card=document.createElement('div'); card.className='card';
+      const media=document.createElement('div'); media.className='media';
+      const img=document.createElement('img'); img.src=p.image||'https://via.placeholder.com/220x160?text=No+Image';
+      img.addEventListener('click',()=>openViewer(p));
+      media.appendChild(img);
+      card.appendChild(media);
+
+      const meta=document.createElement('div'); meta.className='meta';
+      meta.innerHTML=`<div class="title">${p.brand} ${p.model}</div><div class="price">₹${p.price}</div>`;
+      card.appendChild(meta);
+
+      const actions=document.createElement('div'); actions.className='actions';
+      const qtybox=document.createElement('div'); qtybox.className='qtybox';
+      const btnAdd=document.createElement('button'); btnAdd.innerText='Add'; btnAdd.onclick=()=>addToCart(p.id); qtybox.appendChild(btnAdd);
+      actions.appendChild(qtybox);
+      card.appendChild(actions);
+
+      productGrid.appendChild(card);
     });
+  }
 
-    logoutBtn.addEventListener('click', ()=>{ doLogout(); closeModal(); });
+  function renderCartBubble(){
+    let total=0;
+    for(let k in cart) total+=cart[k];
+    cartCount.innerText=total; 
+    cartBtn.style.display=total>0?'flex':'none';
+  }
 
-    function doLogin(u,p){ if(u===ADMIN_USER.user && p===ADMIN_USER.pass){ isAdmin=true; sessionStorage.setItem('bw_admin','1'); renderUI(); closeModal(); toast('Logged in as admin'); } else { toast('Invalid credentials'); }}
-    function doLogout(){ isAdmin=false; sessionStorage.removeItem('bw_admin'); renderUI(); toast('Logged out'); }
+  // ========== Cart Actions ==========
+  function addToCart(id){ cart[id]=(cart[id]||0)+1; saveCart(); renderCartBubble(); toast('Added to cart'); }
 
-    // Save product handler
-    saveProduct.addEventListener('click', async ()=>{
-      const serial = document.getElementById('pSerial').value.trim();
-      const brand = document.getElementById('pBrand').value.trim();
-      const model = document.getElementById('pModel').value.trim();
-      const material = document.getElementById('pMaterial').value.trim();
-      const price = Number(document.getElementById('pPrice').value || 0);
-      const application = document.getElementById('pApplication').value.trim();
+  // ========== Admin Actions ==========
+  loginBtn.addEventListener('click',()=>{
+    if(isAdmin){ toast('Already logged in'); return; }
+    const u=prompt('Username',''); const p=prompt('Password','');
+    if(u===ADMIN_USER.user && p===ADMIN_USER.pass){ isAdmin=true; sessionStorage.setItem('bw_admin','1'); renderUI(); toast('Admin logged in'); } else toast('Invalid'); 
+  });
 
-      if(!brand || !model){ toast('Brand and Model required'); return; }
+  logoutBtn.addEventListener('click',()=>{ isAdmin=false; sessionStorage.removeItem('bw_admin'); renderUI(); toast('Logged out'); });
 
-      // Image reading
-      let imgData = '';
-      if(pImage.files && pImage.files[0]){
-        imgData = await fileToDataURL(pImage.files[0]);
-      }
+  saveProduct.addEventListener('click',()=>{
+    if(!isAdmin){ toast('Login first'); return; }
+    const serial=document.getElementById('pSerial').value;
+    const brand=document.getElementById('pBrand').value;
+    const model=document.getElementById('pModel').value;
+    const material=document.getElementById('pMaterial').value;
+    const price=Number(document.getElementById('pPrice').value);
+    const application=document.getElementById('pApplication').value;
+    const file=pImage.files[0];
+    if(!brand || !model){ toast('Brand & Model required'); return; }
 
-      const item = { id: uid(), serial, brand, model, material, price, application, image: imgData, published: true, created: Date.now() };
-      products.unshift(item);
-      saveProducts();
-      clearProductForm();
-      renderProducts();
-      toast('Product added & published');
-    });
+    const reader = new FileReader();
+    reader.onload = e => {
+      products.push({id:uid(), serial, brand, model, material, price, application, image:e.target.result, published:true, created:Date.now()});
+      saveProducts(); renderProducts(); toast('Product added');
+    };
+    if(file){ reader.readAsDataURL(file); } else { products.push({id:uid(), serial, brand, model, material, price, application, image:'', published:true, created:Date.now()}); saveProducts(); renderProducts(); toast('Product added'); }
+  });
 
-    clearForm.addEventListener('click', ()=>{ clearProductForm(); });
+  clearForm.addEventListener('click',()=>{ document.getElementById('pSerial').value=''; document.getElementById('pBrand').value=''; document.getElementById('pModel').value=''; document.getElementById('pMaterial').value=''; document.getElementById('pPrice').value=''; document.getElementById('pApplication').value=''; pImage.value=''; });
 
-    function clearProductForm(){ ['pSerial','pBrand','pModel','pMaterial','pPrice','pApplication'].forEach(id=>document.getElementById(id).value=''); pImage.value=''; }
-
-    function fileToDataURL(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); }) }
-
-    // Product rendering
-    function renderProducts(filterText=''){ productGrid.innerHTML='';
-      const q = (filterText || searchInput.value || '').toLowerCase();
-      const onlyPublished = publishedFilter.dataset.active === '1';
-      const list = products.filter(p=>{
-        if(onlyPublished && !p.published) return false;
-        if(!q) return true;
-        const hay = (p.brand+' '+p.model+' '+p.material+' '+p.application+' '+p.serial+' '+(p.price||'')).toLowerCase();
-        return hay.includes(q);
-      });
-
-      if(list.length===0){ productGrid.innerHTML = '<div class="muted">No products — add some from Admin.</div>'; return; }
-
-      for(const p of list){ const el = document.createElement('div'); el.className='card';
-        el.innerHTML = `
-          <div class="media"><img src="${p.image || placeholderData(p)}" alt="${escapeHtml(p.model)}" data-id="${p.id}" /></div>
-          <div class="meta"><div class="title">${escapeHtml(p.brand)} ${escapeHtml(p.model)}</div><div class="price">₹ ${numberFormat(p.price)}</div></div>
-          <div class="muted">${escapeHtml(p.material)} • ${escapeHtml(p.application || '')}</div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div class="qtybox">
-              <button data-action="dec" data-id="${p.id}">-</button>
-              <div id="qty-${p.id}">${cart[p.id] ? cart[p.id].qty : 0}</div>
-              <button data-action="inc" data-id="${p.id}">+</button>
-            </div>
-            <div class="actions">
-              <button data-action="add" data-id="${p.id}" class="btn-primary">Add</button>
-              ${isAdmin? `<button data-action="edit" data-id="${p.id}" class="btn-muted">Edit</button><button data-action="del" data-id="${p.id}" class="btn-muted">Delete</button>`: ''}
-            </div>
-          </div>
-        `;
-        productGrid.appendChild(el);
-      }
-
-      // attach listeners (delegation) for images and buttons
-      productGrid.querySelectorAll('img').forEach(img=>{ img.addEventListener('click', (e)=>{ openViewer(e.target.src, e.target.alt); }); });
-      productGrid.querySelectorAll('button').forEach(btn=> btn.addEventListener('click', handleCardAction));
-    }
-
-    function handleCardAction(e){ const btn = e.currentTarget; const action = btn.dataset.action; const id = btn.dataset.id; if(!action) return;
-      if(action==='inc'){ changeQty(id, 1); }
-      if(action==='dec'){ changeQty(id, -1); }
-      if(action==='add'){ changeQty(id, 1); }
-      if(action==='edit'){ openModal(editForm(id)); }
-      if(action==='del'){ if(confirm('Delete this product?')){ products = products.filter(x=>x.id!==id); saveProducts(); renderProducts(); toast('Deleted'); }}
-    }
-
-    function changeQty(id, delta){ const prod = products.find(p=>p.id===id); if(!prod) return; cart[id] = cart[id] || { id: id, product: prod, qty:0 };
-      cart[id].qty = Math.max(0, (cart[id].qty||0) + delta);
-      if(cart[id].qty===0) delete cart[id];
-      saveCart(); renderProducts(); renderCartBubble(); }
-
-    function renderCartBubble(){ const count = Object.values(cart).reduce((s,it)=>s+it.qty,0); if(count>0){ cartBtn.style.display='flex'; cartCount.innerText = count; } else { cartBtn.style.display='none'; }}
-
-    // Modal helpers
-    function openModal(html){ modalBackdrop.style.display='flex'; modalContent.innerHTML=''; if(typeof html === 'string'){ modalContent.innerHTML = html } else if(html instanceof Node){ modalContent.appendChild(html) }
-      modalBackdrop.addEventListener('click', backdropClick);
-    }
-    function closeModal(){ modalBackdrop.style.display='none'; modalContent.innerHTML=''; modalBackdrop.removeEventListener('click', backdropClick);
-    }
-    function backdropClick(e){ if(e.target===modalBackdrop) closeModal(); }
-
-    // Login form element
-    function loginForm(){ const wrapper = document.createElement('div');
-      wrapper.innerHTML = `
-        <h2 style="margin:0 0 8px 0">Admin Login</h2>
-        <div class="small">Use credentials to manage catalog</div>
-        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
-          <input id="loginUser" placeholder="username" />
-          <input id="loginPass" placeholder="password" type="password" />
-          <div style="display:flex;gap:8px"><button id="doLogin" class="btn-primary">Login</button><button id="cancelLogin" class="btn-muted">Cancel</button></div>
+  // ========== Product Viewer ==========
+  function openViewer(p){
+    modalBackdrop.style.display='flex';
+    modalContent.innerHTML=`
+      <div class="viewer">
+        <img src="${p.image||'https://via.placeholder.com/400x300?text=No+Image'}" id="viewerImg">
+        <div class="zoom-controls">
+          <button onclick="zoomImg(1.2)">Zoom In</button>
+          <button onclick="zoomImg(0.8)">Zoom Out</button>
+          <button onclick="closeModal()">Close</button>
         </div>
-      `;
-      setTimeout(()=>{ wrapper.querySelector('#doLogin').addEventListener('click', ()=>{ const u=wrapper.querySelector('#loginUser').value.trim(); const p=wrapper.querySelector('#loginPass').value.trim(); doLogin(u,p); }); wrapper.querySelector('#cancelLogin').addEventListener('click', closeModal); });
-      return wrapper;
-    }
+      </div>
+    `;
+    let scale=1;
+    window.zoomImg=function(f){ scale*=f; document.getElementById('viewerImg').style.transform='scale('+scale+')'; }
+    window.closeModal=function(){ modalBackdrop.style.display='none'; }
+  }
 
-    function adminQuick(){ return `<div><h3>Admin</h3><div style="display:flex;gap:8px;margin-top:10px"><button id="goAdmin" class="btn-primary">Open Admin Panel</button><button id="cancel" class="btn-muted">Close</button></div></div>` }
+  // ========== Search & Filter ==========
+  searchInput.addEventListener('input',()=>renderProducts());
+  showAll.addEventListener('click',()=>renderProducts());
+  publishedFilter.addEventListener('click',()=>renderProducts('published'));
 
-    // Edit form for product
-    function editForm(id){ const p = products.find(x=>x.id===id); if(!p) return '<div>Not found</div>';
-      const wrapper = document.createElement('div'); wrapper.innerHTML = `
-        <h3>Edit Product</h3>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <input id="editBrand" value="${escapeHtml(p.brand)}" />
-          <input id="editModel" value="${escapeHtml(p.model)}" />
-          <input id="editMaterial" value="${escapeHtml(p.material)}" />
-          <input id="editPrice" type="number" value="${p.price||0}" />
-          <input id="editSerial" value="${escapeHtml(p.serial)}" />
-          <input id="editApplication" value="${escapeHtml(p.application)}" />
-          <label>Replace Image</label>
-          <input id="editImageFile" type="file" accept="image/*" />
-          <div style="display:flex;gap:8px;margin-top:8px"><button id="saveEdit" class="btn-primary">Save</button><button id="cancelEdit" class="btn-muted">Cancel</button></div>
-        </div>
-      `;
+  // ========== Initial Render ==========
+  renderUI();
+</script>
 
-      setTimeout(()=>{
-        wrapper.querySelector('#cancelEdit').addEventListener('click', closeModal);
-        wrapper.querySelector('#saveEdit').addEventListener('click', async ()=>{
-          p.brand = wrapper.querySelector('#editBrand').value.trim();
-          p.model = wrapper.querySelector('#editModel').value.trim();
-          p.material = wrapper.querySelector('#editMaterial').value.trim();
-          p.price = Number(wrapper.querySelector('#editPrice').value||0);
-          p.serial = wrapper.querySelector('#editSerial').value.trim();
-          p.application = wrapper.querySelector('#editApplication').value.trim();
-          const f = wrapper.querySelector('#editImageFile').files[0];
-          if(f){ p.image = await fileToDataURL(f); }
-          saveProducts(); renderProducts(); closeModal(); toast('Saved');
-        });
-      });
-
-      return wrapper;
-    }
-
-    // Viewer for image with zoom controls
-    function openViewer(src, alt=''){ const wrap = document.createElement('div'); wrap.className='viewer';
-      wrap.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${escapeHtml(alt)}</h3><div style="display:flex;gap:8px"><button id="closeView" class="btn-muted">Close</button></div></div>
-        <div style="width:100%"><img id="viewImg" src="${src}" alt="" /></div>
-        <div class="zoom-controls"><button id="zoomOut">-</button><div class="muted">Zoom</div><button id="zoomIn">+</button></div>
-      `;
-      setTimeout(()=>{
-        const img = wrap.querySelector('#viewImg'); let scale=1;
-        wrap.querySelector('#zoomIn').addEventListener('click', ()=>{ scale = Math.min(4, scale+0.25); img.style.transform = `scale(${scale})`; });
-        wrap.querySelector('#zoomOut').addEventListener('click', ()=>{ scale = Math.max(0.25, scale-0.25); img.style.transform = `scale(${scale})`; });
-        wrap.querySelector('#closeView').addEventListener('click', closeModal);
-      });
-      openModal(wrap);
-    }
-
-    // Small helpers
-    function toast(msg){ const t = document.createElement('div'); t.textContent = msg; t.style.position='fixed'; t.style.right='18px'; t.style.bottom='88px'; t.style.background='#000'; t.style.color='#fff'; t.style.padding='8px 12px'; t.style.borderRadius='8px'; t.style.zIndex=999; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
-    function placeholderData(p){ return 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="100%" height="100%" fill="#f7f7f7"/><text x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" font-size="22" fill="#000">${escapeHtml(p? p.model||p.brand || 'No Image' : 'No Image')}</text></svg>`)}
-    function escapeHtml(s){ if(!s && s!==0) return ''; return (''+s).replace(/[&"'<>]/g, c=> ({'&':'&amp;','"':'&quot;',"'":'&#39;','<':'&lt;','>':'&gt;'}[c])); }
-    function numberFormat(n){ if(!n && n!==0) return '-'; return n.toLocaleString('en-IN'); }
-
-    // Cart modal
-    cartBtn.addEventListener('click', ()=>{ openModal(cartView()); });
-    addToCartBtn.addEventListener('click', ()=>{ openModal(cartView()); });
-
-    function cartView(){ const wrapper = document.createElement('div'); wrapper.innerHTML = `<h3>Cart</h3><div id="cartItems"></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><div class="muted">Total</div><div id="cartTotal" style="font-weight:800">-</div></div><div style="margin-top:12px;display:flex;gap:8px"><button id="checkout" class="btn-primary">Supply / Checkout</button><button id="closeCart" class="btn-muted">Close</button></div>`;
-      setTimeout(()=>{
-        renderCartItems(wrapper.querySelector('#cartItems'));
-        wrapper.querySelector('#closeCart').addEventListener('click', closeModal);
-        wrapper.querySelector('#checkout').addEventListener('click', ()=>{ // supply action for admin
-          if(isAdmin){ // admin can mark supplied (clear cart)
-            if(confirm('Mark these items as supplied and clear cart?')){ cart={}; saveCart(); renderProducts(); renderCartBubble(); closeModal(); toast('Marked supplied'); }
-          } else {
-            toast('Please contact admin to supply');
-          }
-        });
-      });
-      return wrapper;
-    }
-
-    function renderCartItems(container){ container.innerHTML=''; const items = Object.values(cart); if(items.length===0){ container.innerHTML='<div class="muted">Cart is empty</div>'; document.getElementById('cartTotal').innerText='0'; return; }
-      let tot=0; for(const it of items){ const div = document.createElement('div'); div.style.display='flex'; div.style.justifyContent='space-between'; div.style.alignItems='center'; div.style.padding='8px 0'; div.innerHTML = `<div><div style="font-weight:700">${escapeHtml(it.product.brand)} ${escapeHtml(it.product.model)}</div><div class="muted">₹ ${numberFormat(it.product.price)} x ${it.qty}</div></div><div style="display:flex;gap:8px;align-items:center"><button data-id="${it.id}" data-action="dec">-</button><div>${it.qty}</div><button data-id="${it.id}" data-action="inc">+</button></div>`;
-        container.appendChild(div);
-      tot += (it.product.price||0) * it.qty; }
-      document.getElementById('cartTotal').innerText = '₹ '+numberFormat(tot);
-      container.querySelectorAll('button').forEach(b=> b.addEventListener('click', (e)=>{ const id=b.dataset.id; const action=b.dataset.action; changeQty(id, action==='inc'?1:-1); renderCartItems(container); renderCartBubble(); saveCart(); }));
-    }
-
-    // Export / Import
-    document.getElementById('exportBtn').addEventListener('click', ()=>{ const data = JSON.stringify(products, null, 2); const blob = new Blob([data], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='products.json'; a.click(); URL.revokeObjectURL(url); });
-    document.getElementById('importBtn').addEventListener('click', ()=>{ const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.addEventListener('change', ()=>{ const f = inp.files[0]; const fr = new FileReader(); fr.onload=()=>{ try{ const d = JSON.parse(fr.result); if(Array.isArray(d)){ products = d; saveProducts(); renderProducts(); toast('Imported'); closeModal(); }else toast('Invalid file'); }catch(e){toast('Invalid JSON'); } }; fr.readAsText(f); }); inp.click(); });
-
-    // Search and filters
-    searchInput.addEventListener('input', ()=> renderProducts()); showAll.addEventListener('click', ()=>{ publishedFilter.dataset.active='0'; publishedFilter.classList.remove('active'); renderProducts(); }); publishedFilter.addEventListener('click', ()=>{ const cur = publishedFilter.dataset.active === '1'; publishedFilter.dataset.active = cur? '0' : '1'; renderProducts(); });
-
-    // Modal click actions for admin quick open
-    modalBackdrop.addEventListener('click', (e)=>{ if(e.target === modalBackdrop) closeModal(); });
-    document.addEventListener('click', (e)=>{
-      if(e.target && e.target.id === 'goAdmin'){ closeModal(); sessionStorage.setItem('bw_admin','1'); isAdmin=true; renderUI(); }
-    });
-
-    // Render UI based on admin state
-    function renderUI(){ if(isAdmin){ adminArea.style.display='block'; loginNotice.style.display='none'; loginBtn.innerText='Admin'; } else { adminArea.style.display='none'; loginNotice.style.display='block'; loginBtn.innerText='Admin Login'; }
-      // client name (simple) — you can extend to let user set it
-      clientNameEl.innerText = localStorage.getItem('bw_client_name') || 'Guest';
-      renderProducts(); renderCartBubble(); }
-
-    // Misc helpers
-    function escapeCSV(s){ return '"'+(''+s).replace(/"/g,'""')+'"'; }
-
-    // small helper for when clicking outside of modal
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
-
-    // Initial demo data if no products
-    if(products.length===0){ products.push({ id: uid(), serial:'001', brand:'Acme', model:'Classic', material:'Stainless', price:1299, application:'Home', image:'', published:true, created: Date.now() }); saveProducts(); }
-
-    // Helper to prevent accidentally selecting text during taps
-    document.addEventListener('touchstart', ()=>{});
-
-    // Small utilities used in many places
-    function numberWithCommas(x){ return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
-
-  </script>
 </body>
 </html>
