@@ -35,7 +35,7 @@ Clinic Appointment System
 </header>
 
 <div class="container">
-<!-- Login / Signup -->
+<!-- Login -->
 <div id="authPage">
 <form id="loginForm">
 <h2>Login</h2>
@@ -47,20 +47,6 @@ Clinic Appointment System
 <option value="patient">Patient</option>
 </select>
 <button type="submit" class="outline">Login</button>
-<button type="button" class="outline" id="showSignup">Sign Up</button>
-</form>
-
-<form id="signupForm" style="display:none;">
-<h2>Sign Up</h2>
-<input type="text" id="signupName" placeholder="Name" required>
-<input type="email" id="signupEmail" placeholder="Email" required>
-<input type="password" id="signupPassword" placeholder="Password" required>
-<select id="signupRole">
-<option value="doctor">Doctor</option>
-<option value="patient">Patient</option>
-</select>
-<button type="submit" class="outline">Sign Up</button>
-<button type="button" class="outline" id="showLogin">Back to Login</button>
 </form>
 </div>
 
@@ -128,351 +114,98 @@ Clinic Appointment System
 </div>
 </div>
 
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js"></script>
-
 <script>
-/* ----------------- CONFIG -----------------
- Replace this config with your project's config from Firebase console (if different).
- If you already have a Firebase project, use its config. The project below is the example used earlier.
--------------------------------------------*/
-const firebaseConfig = {
-  apiKey: "AIzaSyAIje3aPJK5BeZ9u0M-PY3rrZHPBZCsp7I",
-  authDomain: "patient-app-9d81f.firebaseapp.com",
-  databaseURL: "https://patient-app-9d81f-default-rtdb.firebaseio.com",
-  projectId: "patient-app-9d81f",
-  storageBucket: "patient-app-9d81f.appspot.com",
-  messagingSenderId: "86486627512",
-  appId: "1:86486627512:web:595270284159741947f04d"
-};
+let users=JSON.parse(localStorage.getItem("users")||"[]");
+let clinics=JSON.parse(localStorage.getItem("clinics")||"[]");
+let currentUser=JSON.parse(localStorage.getItem("currentUser")||"null");
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
-
-let currentUser = null;
-let users = [];
-let clinics = [];
-let doctors = [];
-let patients = [];
-
-/* DOM */
-const loginForm = document.getElementById("loginForm");
-const loginEmail = document.getElementById("loginEmail");
-const loginPassword = document.getElementById("loginPassword");
-const loginRole = document.getElementById("loginRole");
-const logoutBtn = document.getElementById("logoutBtn");
-const authPage = document.getElementById("authPage");
-const adminPage = document.getElementById("adminPage");
-const doctorPage = document.getElementById("doctorPage");
-const patientPage = document.getElementById("patientPage");
-
-const clinicForm = document.getElementById("clinicForm");
-const doctorForm = document.getElementById("doctorForm");
-const patientForm = document.getElementById("patientForm");
-const doctorClinic = document.getElementById("doctorClinic");
-const patientDoctor = document.getElementById("patientDoctor");
-const patientsContainer = document.getElementById("patientsContainer");
-const doctorPatients = document.getElementById("doctorPatients");
-const myCard = document.getElementById("myCard");
-const searchBox = document.getElementById("searchBox");
-
-const signupForm = document.getElementById("signupForm");
-const signupName = document.getElementById("signupName");
-const signupEmail = document.getElementById("signupEmail");
-const signupPassword = document.getElementById("signupPassword");
-const signupRole = document.getElementById("signupRole");
-const showSignup = document.getElementById("showSignup");
-const showLogin = document.getElementById("showLogin");
-
-/* default admin creds (kept as you requested) */
-const DEFAULT_ADMIN_EMAIL = "admin@wec.com";
-const DEFAULT_ADMIN_PASSWORD = "admin123";
-const DEFAULT_ADMIN_NAME = "Admin";
-
-/* ensure default admin exists (create in Auth & DB if absent) */
-function ensureDefaultAdmin(){
-  db.ref('users').once('value').then(snap=>{
-    const data = snap.val() || {};
-    const adminExists = Object.values(data).some(u=>u && u.role==='admin');
-    if(adminExists) return; // already exists in DB
-    // try to create auth user
-    auth.createUserWithEmailAndPassword(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
-      .then(userCred=>{
-        const uid = userCred.user.uid;
-        const adminObj = { name: DEFAULT_ADMIN_NAME, email: DEFAULT_ADMIN_EMAIL, role: 'admin' };
-        return db.ref('users/' + uid).set(adminObj);
-      })
-      .then(()=>{
-        console.log('Default admin created in Auth + DB.');
-        auth.signOut();
-      })
-      .catch(err=>{
-        // if email already in use, try signing in to get uid then ensure DB entry
-        if(err.code === 'auth/email-already-in-use'){
-          auth.signInWithEmailAndPassword(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
-            .then(userCred=>{
-              const uid = userCred.user.uid;
-              return db.ref('users/' + uid).once('value').then(snap=>{
-                if(!snap.exists()){
-                  const adminObj = { name: DEFAULT_ADMIN_NAME, email: DEFAULT_ADMIN_EMAIL, role: 'admin' };
-                  return db.ref('users/' + uid).set(adminObj);
-                }
-              });
-            })
-            .then(()=> auth.signOut())
-            .catch(e=> console.warn('Could not auto-create admin:', e.message));
-        } else {
-          console.warn('Could not auto-create admin:', err.message);
-        }
-      });
-  });
+// Default admin
+if(!users.some(u=>u.role==="admin")){
+  users.push({id:1,name:"Admin",email:"admin@wec.com",password:"admin123",role:"admin"});
+  localStorage.setItem("users",JSON.stringify(users));
 }
 
-/* realtime listeners to keep local arrays up to date */
-function attachListeners(){
-  db.ref('users').on('value', snap=>{
-    const v = snap.val() || {};
-    users = Object.keys(v).map(k => ({ id: k, ...v[k] }));
-    doctors = users.filter(u=>u.role==='doctor');
-    patients = users.filter(u=>u.role==='patient');
-    renderPatients();
-    renderDoctorPatients();
-    renderMyCard();
-    fillDoctorOptions();
-  });
-  db.ref('clinics').on('value', snap=>{
-    const v = snap.val() || {};
-    clinics = Object.keys(v).map(k => ({ id: k, ...v[k] }));
-    fillClinicOptions();
-  });
-}
-
-/* UI show/hide */
+function save(){localStorage.setItem("users",JSON.stringify(users));localStorage.setItem("clinics",JSON.stringify(clinics));localStorage.setItem("currentUser",JSON.stringify(currentUser));}
+function logout(){currentUser=null;save();location.reload();}
 function showPage(){
-  authPage.style.display = currentUser ? "none":"flex";
-  adminPage.style.display = currentUser && currentUser.role==='admin' ? "flex":"none";
-  doctorPage.style.display = currentUser && currentUser.role==='doctor' ? "flex":"none";
-  patientPage.style.display = currentUser && currentUser.role==='patient' ? "flex":"none";
-  logoutBtn.style.display = currentUser ? 'inline-block':'none';
+  document.getElementById("authPage").style.display=currentUser? "none":"flex";
+  document.getElementById("adminPage").style.display=(currentUser&&currentUser.role==="admin")? "flex":"none";
+  document.getElementById("doctorPage").style.display=(currentUser&&currentUser.role==="doctor")? "flex":"none";
+  document.getElementById("patientPage").style.display=(currentUser&&currentUser.role==="patient")? "flex":"none";
+  document.getElementById("logoutBtn").style.display=currentUser? "inline-block":"none";
+  fillDoctorOptions();fillClinicOptions();renderPatients();renderDoctorPatients();renderMyCard();
 }
 
-/* Login */
-loginForm.addEventListener('submit', e=>{
+// login
+loginForm.addEventListener("submit",e=>{
   e.preventDefault();
-  const email = loginEmail.value.trim();
-  const password = loginPassword.value;
-  const role = loginRole.value;
-
-  auth.signInWithEmailAndPassword(email, password)
-    .then(userCred=>{
-      const uid = userCred.user.uid;
-      return db.ref('users/' + uid).once('value').then(snap=>{
-        const u = snap.val();
-        if(!u) throw new Error('User record not found in database.');
-        if(u.role !== role) throw new Error('Role mismatch for this account.');
-        currentUser = { id: uid, ...u };
-        showPage();
-      });
-    })
-    .catch(err=>{
-      alert('Login failed: ' + (err.message || err));
-    });
+  let u=users.find(x=>x.email===loginEmail.value && x.password===loginPassword.value && x.role===loginRole.value);
+  if(!u)return alert("Invalid credentials");
+  currentUser=u;save();showPage();
 });
 
-/* Logout */
-function logout(){
-  currentUser = null;
-  auth.signOut().catch(()=>{});
-  showPage();
-}
-
-/* Signup (creates an auth user and DB record) */
-signupForm.addEventListener('submit', e=>{
+// add clinic
+clinicForm.addEventListener("submit",e=>{
   e.preventDefault();
-  const name = signupName.value.trim();
-  const email = signupEmail.value.trim();
-  const password = signupPassword.value;
-  const role = signupRole.value;
-  // keep original behavior requirement? original required @wec.com, preserve that rule:
-  if(!email.endsWith("@wec.com")){ alert("Only @wec.com email allowed"); return; }
+  clinics.push({id:Date.now(),name:clinicName.value,address:clinicAddress.value,phone:clinicPhone.value});
+  save();alert("Clinic Added");clinicForm.reset();fillClinicOptions();
+});
+function fillClinicOptions(){doctorClinic.innerHTML=clinics.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");}
 
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(userCred=>{
-      const uid = userCred.user.uid;
-      const userObj = { name, email, role };
-      if(role === 'patient'){
-        // keep patient fields empty initially; admin can set details later
-        userObj.phone = "";
-        userObj.age = "";
-        userObj.problem = "";
-        userObj.date = "";
-        userObj.time = "";
-        userObj.day = "";
-        userObj.address = "";
-      }
-      return db.ref('users/' + uid).set(userObj).then(()=>{
-        currentUser = { id: uid, ...userObj };
-        showPage();
-      });
-    })
-    .catch(err=>{
-      alert('Sign up failed: ' + (err.message || err));
-    });
+// add doctor
+doctorForm.addEventListener("submit",e=>{
+  e.preventDefault();
+  let doc={id:Date.now(),name:doctorName.value,email:doctorEmail.value,password:doctorPassword.value,role:"doctor",clinicId:doctorClinic.value};
+  users.push(doc);save();alert("Doctor Added");doctorForm.reset();fillDoctorOptions();
 });
 
-/* Toggle auth forms */
-showSignup.onclick = ()=>{ loginForm.style.display='none'; signupForm.style.display='flex'; }
-showLogin.onclick = ()=>{ signupForm.style.display='none'; loginForm.style.display='flex'; }
-
-/* Add Clinic */
-clinicForm.addEventListener('submit', e=>{
+// add patient
+patientForm.addEventListener("submit",e=>{
   e.preventDefault();
-  const clinic = {
-    name: clinicName.value.trim(),
-    address: clinicAddress.value.trim(),
-    phone: clinicPhone.value.trim()
-  };
-  const newRef = db.ref('clinics').push();
-  newRef.set(clinic).then(()=>{
-    alert('Clinic added');
-    clinicForm.reset();
-  }).catch(err=>alert('Error adding clinic: '+err.message));
+  let pat={id:Date.now(),name:patientName.value,email:patientEmail.value,password:patientPassword.value,role:"patient",phone:patientPhone.value,age:patientAge.value,problem:patientProblem.value,date:patientDate.value,time:patientTime.value,day:patientDay.value,address:patientAddress.value,doctorId:patientDoctor.value};
+  users.push(pat);save();patientForm.reset();renderPatients();renderDoctorPatients();
 });
+function fillDoctorOptions(){let docs=users.filter(u=>u.role==="doctor");patientDoctor.innerHTML=docs.map(d=>`<option value="${d.id}">${d.name}</option>`).join("");}
 
-/* Add Doctor (creates auth user + DB user record) */
-doctorForm.addEventListener('submit', e=>{
-  e.preventDefault();
-  const docEmail = doctorEmail.value.trim();
-  const docPass = doctorPassword.value;
-  const docObj = {
-    name: doctorName.value.trim(),
-    email: docEmail,
-    role: 'doctor',
-    clinicId: doctorClinic.value || ""
-  };
-  auth.createUserWithEmailAndPassword(docEmail, docPass)
-    .then(userCred=>{
-      const uid = userCred.user.uid;
-      return db.ref('users/' + uid).set(docObj).then(()=>{
-        alert('Doctor added');
-        doctorForm.reset();
-      });
-    })
-    .catch(err=>{
-      alert('Error adding doctor: ' + (err.message || err));
-    });
-});
-
-/* Add Patient (creates auth user + DB user record) */
-patientForm.addEventListener('submit', e=>{
-  e.preventDefault();
-  const patEmail = patientEmail.value.trim();
-  const patPass = patientPassword.value;
-  const patObj = {
-    name: patientName.value.trim(),
-    email: patEmail,
-    role: 'patient',
-    phone: patientPhone.value.trim(),
-    age: patientAge.value,
-    problem: patientProblem.value.trim(),
-    date: patientDate.value,
-    time: patientTime.value,
-    day: patientDay.value,
-    address: patientAddress.value.trim(),
-    doctorId: patientDoctor.value || ""
-  };
-  auth.createUserWithEmailAndPassword(patEmail, patPass)
-    .then(userCred=>{
-      const uid = userCred.user.uid;
-      return db.ref('users/' + uid).set(patObj).then(()=>{
-        alert('Patient added');
-        patientForm.reset();
-      });
-    })
-    .catch(err=>{
-      alert('Error adding patient: ' + (err.message || err));
-    });
-});
-
-/* Fill dropdowns */
-function fillClinicOptions(){
-  doctorClinic.innerHTML = clinics.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-}
-function fillDoctorOptions(){
-  patientDoctor.innerHTML = doctors.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
-}
-
-/* Render lists */
+// render patients (admin)
 function renderPatients(){
-  patientsContainer.innerHTML='';
-  patients.forEach(p=>{
-    let card=document.createElement('div');
-    card.className='card';
-    card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email||''}</p><p><b>Phone:</b> ${p.phone||''}</p><p><b>Age:</b> ${p.age||''}</p><p><b>Problem:</b> ${p.problem||''}</p><p><b>Date:</b> ${p.date||''} ${p.time||''} (${p.day||''})</p><p><b>Address:</b> ${p.address||''}</p>
-    <div><button class='outline' onclick="alert('SMS to ${p.phone||''}')">SMS</button><button class='outline' onclick="window.open('https://wa.me/${p.phone||''}','_blank')">WhatsApp</button><button class='outline' onclick='deleteUser(\"${p.id}\")'>Delete</button></div>`;
+  patientsContainer.innerHTML="";
+  let pats=users.filter(u=>u.role==="patient");
+  pats.forEach(p=>{
+    let card=document.createElement("div");card.className="card";
+    card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email}</p><p><b>Phone:</b> ${p.phone}</p><p><b>Age:</b> ${p.age}</p><p><b>Problem:</b> ${p.problem}</p><p><b>Date:</b> ${p.date} ${p.time} (${p.day})</p><p><b>Address:</b> ${p.address}</p>
+    <div><button class="outline" onclick="alert('SMS to ${p.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button><button class="outline" onclick="deleteUser(${p.id})">Delete</button></div>`;
     patientsContainer.appendChild(card);
   });
 }
+
+// doctor dashboard
 function renderDoctorPatients(){
-  doctorPatients.innerHTML='';
-  if(currentUser && currentUser.role==='doctor'){
-    let pats = patients.filter(p=>p.doctorId==currentUser.id);
+  doctorPatients.innerHTML="";
+  if(currentUser && currentUser.role==="doctor"){
+    let pats=users.filter(p=>p.role==="patient" && p.doctorId==currentUser.id);
     pats.forEach(p=>{
-      let card=document.createElement('div');
-      card.className='card';
-      card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email||''}</p><p><b>Phone:</b> ${p.phone||''}</p><p><b>Age:</b> ${p.age||''}</p><p><b>Problem:</b> ${p.problem||''}</p><p><b>Date:</b> ${p.date||''} ${p.time||''} (${p.day||''})</p><p><b>Address:</b> ${p.address||''}</p><div><button class='outline' onclick="alert('SMS to ${p.phone||''}')">SMS</button><button class='outline' onclick="window.open('https://wa.me/${p.phone||''}','_blank')">WhatsApp</button></div>`;
+      let card=document.createElement("div");card.className="card";
+      card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email}</p><p><b>Phone:</b> ${p.phone}</p><p><b>Age:</b> ${p.age}</p><p><b>Problem:</b> ${p.problem}</p><p><b>Date:</b> ${p.date} ${p.time} (${p.day})</p><p><b>Address:</b> ${p.address}</p>
+      <div><button class="outline" onclick="alert('SMS to ${p.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button></div>`;
       doctorPatients.appendChild(card);
     });
   }
 }
+
+// patient dashboard
 function renderMyCard(){
-  myCard.innerHTML='';
-  if(currentUser && currentUser.role==='patient'){
-    let p = currentUser;
-    let card=document.createElement('div');
-    card.className='card';
-    card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email||''}</p><p><b>Phone:</b> ${p.phone||''}</p><p><b>Age:</b> ${p.age||''}</p><p><b>Problem:</b> ${p.problem||''}</p><p><b>Date:</b> ${p.date||''} ${p.time||''} (${p.day||''})</p><p><b>Address:</b> ${p.address||''}</p><div><button class='outline' onclick="alert('SMS to ${p.phone||''}')">SMS</button><button class='outline' onclick="window.open('https://wa.me/${p.phone||''}','_blank')">WhatsApp</button></div>`;
+  myCard.innerHTML="";
+  if(currentUser&&currentUser.role==="patient"){
+    let card=document.createElement("div");card.className="card";
+    card.innerHTML=`<h3>${currentUser.name}</h3><p><b>Email:</b> ${currentUser.email}</p><p><b>Phone:</b> ${currentUser.phone}</p><p><b>Age:</b> ${currentUser.age}</p><p><b>Problem:</b> ${currentUser.problem}</p><p><b>Date:</b> ${currentUser.date} ${currentUser.time} (${currentUser.day})</p><p><b>Address:</b> ${currentUser.address}</p>
+    <div><button class="outline" onclick="alert('SMS to ${currentUser.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${currentUser.phone}','_blank')">WhatsApp</button></div>`;
     myCard.appendChild(card);
   }
 }
 
-/* delete user (admin only) */
-function deleteUser(uid){
-  if(!confirm('Delete this user?')) return;
-  db.ref('users/' + uid).remove().then(()=> alert('User removed')).catch(err=> alert('Error: '+err.message));
-}
-
-/* Search */
-searchBox.addEventListener('input', e=>{
-  let q = e.target.value.toLowerCase();
-  document.querySelectorAll('#patientsContainer .card').forEach(c=>{
-    c.style.display = c.textContent.toLowerCase().includes(q) ? 'flex' : 'none';
-  });
-});
-
-/* onAuthState to populate currentUser if a user is signed-in (keep session across reload) */
-auth.onAuthStateChanged(firebaseUser=>{
-  if(firebaseUser){
-    db.ref('users/' + firebaseUser.uid).once('value').then(snap=>{
-      if(snap.exists()){
-        currentUser = { id: firebaseUser.uid, ...snap.val() };
-      } else {
-        currentUser = null;
-      }
-      showPage();
-    }).catch(()=>{ currentUser = null; showPage(); });
-  } else {
-    currentUser = null;
-    showPage();
-  }
-});
-
-/* initialize */
-ensureDefaultAdmin();
-attachListeners();
+function deleteUser(id){users=users.filter(u=>u.id!==id);save();renderPatients();renderDoctorPatients();}
+searchBox.addEventListener("input",e=>{let q=e.target.value.toLowerCase();document.querySelectorAll("#patientsContainer .card").forEach(c=>{c.style.display=c.textContent.toLowerCase().includes(q)?"flex":"none";});});
 showPage();
 </script>
 </body>
