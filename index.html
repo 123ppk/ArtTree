@@ -3,210 +3,201 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Clinic Appointment System</title>
+<title>Sunshot Products</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+
 <style>
-body{font-family:'Segoe UI',sans-serif;margin:0;padding:0;background:#fff;color:#000;min-height:100vh;display:flex;flex-direction:column;}
-header{padding:10px 20px;text-align:center;font-size:20px;font-weight:600;position:relative;background:#f1f5ff;}
-header button.logout{position:absolute;right:8px;top:8px;border:1px solid #dc2626;color:#dc2626;background:#fff;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer;display:none; width:auto;}
-.container{flex:1;padding:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-form{padding:15px;background:#fff;border-radius:10px;border:1px solid #ddd;margin-bottom:10px;width:100%;max-width:350px;box-sizing:border-box;}
-input,select,button{padding:6px;margin:5px 0;width:100%;border-radius:6px;border:1px solid #ddd;box-sizing:border-box;font-size:13px;}
-input:focus,select:focus{border-color:#2563eb;outline:none;}
-button{cursor:pointer;}
-button.outline{border:1px solid #2563eb;background:#fff;color:#2563eb;font-weight:500;}
-button.outline:hover{background:#2563eb;color:#fff;}
-.admin-dashboard{display:flex;width:100%;gap:15px;align-items:flex-start;flex-wrap:wrap;}
-.forms{flex:1;min-width:280px;max-width:320px;display:flex;flex-direction:column;max-height:600px;overflow-y:auto;}
-.cards-container{flex:2;display:flex;flex-direction:column;align-items:center;max-height:600px;overflow-y:auto;width:100%;}
-.cards{display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-start;}
-.card{background:#fff;padding:10px;border-radius:10px;border:1px solid #ddd;min-width:220px;max-width:260px;text-align:left;font-size:13px;flex:1;}
-.card h3{margin:5px 0;font-size:15px;color:#000;}
-.card p{margin:3px 0;font-size:13px;color:#000;}
-.card button{padding:4px 8px;font-size:12px;margin:3px;}
-#searchBox{width:90%;max-width:400px;padding:6px;border-radius:6px;border:1px solid #ccc;margin:5px auto 10px auto;font-size:13px;display:block;}
-#authPage,#adminPage,#doctorPage,#patientPage{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-@media(max-width:800px){.admin-dashboard{flex-direction:column;align-items:center;}.cards-container{align-items:center;}.cards{justify-content:center;}}
+*{box-sizing:border-box;font-family:'Inter',sans-serif;}
+body{margin:0;background:#fff;color:#000;}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 15px;border-bottom:1px solid #ccc;background:#fafafa;}
+header h1{color:orange;font-weight:700;font-size:22px;}
+header button{background:black;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;}
+.container{max-width:1000px;margin:15px auto;padding:10px;}
+.form-area{display:none;max-width:400px;margin:0 auto;border:1px solid #ccc;border-radius:8px;padding:12px;background:#f9f9f9;}
+.form-area input{width:100%;margin:4px 0;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px;}
+.form-area button{background:black;color:white;border:none;padding:8px 12px;border-radius:6px;margin-top:6px;cursor:pointer;font-size:13px;width:100%;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:20px;}
+.card{border:1px solid #ddd;border-radius:8px;padding:6px;text-align:center;background:#fff;}
+.card img{width:100%;height:90px;object-fit:cover;border-radius:6px;cursor:pointer;margin-bottom:5px;transition:transform .3s;}
+.card img:hover{transform:scale(1.05);}
+.card h4{margin:3px 0;font-size:13px;font-weight:600;}
+.card p{margin:2px 0;font-size:11px;}
+.card button{background:black;color:white;border:none;padding:5px 8px;border-radius:5px;margin:2px;cursor:pointer;font-size:10px;}
+.popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:999;}
+.popup-content{background:#fff;padding:15px;border-radius:8px;width:260px;text-align:center;}
+.hidden{display:none;}
 </style>
 </head>
 <body>
+
 <header>
-Clinic Appointment System
-<button class="logout" onclick="logout()" id="logoutBtn">Logout</button>
+  <h1>Sunshot</h1>
+  <div>
+    <button id="loginBtn">Login</button>
+    <button id="logoutBtn" class="hidden">Logout</button>
+  </div>
 </header>
 
 <div class="container">
-<!-- Login -->
-<div id="authPage">
-<form id="loginForm">
-<h2>Login</h2>
-<input type="email" id="loginEmail" placeholder="Email" required>
-<input type="password" id="loginPassword" placeholder="Password" required>
-<select id="loginRole">
-<option value="admin">Admin</option>
-<option value="doctor">Doctor</option>
-<option value="patient">Patient</option>
-</select>
-<button type="submit" class="outline">Login</button>
-</form>
+  <div class="form-area" id="formArea">
+    <input type="text" id="pname" placeholder="Product Name">
+    <input type="text" id="pmaterial" placeholder="Material">
+    <input type="text" id="psize" placeholder="Size">
+    <input type="number" id="pprice" placeholder="Price ₹">
+    <input type="number" id="pqty" placeholder="Quantity">
+    <input type="file" id="pimage" accept="image/*" multiple>
+    <button id="addProductBtn">Add Product</button>
+  </div>
+
+  <div class="cards" id="cardsContainer"></div>
 </div>
 
-<!-- Admin Dashboard -->
-<div id="adminPage" style="display:none;width:100%;">
-<div class="admin-dashboard">
-<div class="forms">
-<form id="clinicForm">
-<h3>Add Clinic</h3>
-<input type="text" id="clinicName" placeholder="Clinic Name" required>
-<input type="text" id="clinicAddress" placeholder="Clinic Address" required>
-<input type="text" id="clinicPhone" placeholder="Phone No" required>
-<button type="submit" class="outline">Add Clinic</button>
-</form>
-<form id="doctorForm">
-<h3>Add Doctor</h3>
-<input type="text" id="doctorName" placeholder="Doctor Name" required>
-<input type="email" id="doctorEmail" placeholder="Doctor Email" required>
-<input type="password" id="doctorPassword" placeholder="Doctor Password" required>
-<select id="doctorClinic"></select>
-<button type="submit" class="outline">Add Doctor</button>
-</form>
-<form id="patientForm">
-<h3>Add Patient</h3>
-<input type="text" id="patientName" placeholder="Patient Name" required>
-<input type="email" id="patientEmail" placeholder="Patient Email" required>
-<input type="password" id="patientPassword" placeholder="Patient Password" required>
-<input type="text" id="patientPhone" placeholder="Phone No" required>
-<input type="number" id="patientAge" placeholder="Age" required>
-<input type="text" id="patientProblem" placeholder="Problem" required>
-<input type="date" id="patientDate" required>
-<input type="time" id="patientTime" required>
-<select id="patientDay" required>
-  <option value="">Select Day</option>
-  <option>Monday</option>
-  <option>Tuesday</option>
-  <option>Wednesday</option>
-  <option>Thursday</option>
-  <option>Friday</option>
-  <option>Saturday</option>
-  <option>Sunday</option>
-</select>
-<input type="text" id="patientAddress" placeholder="Address" required>
-<select id="patientDoctor"></select>
-<button type="submit" class="outline">Add Patient</button>
-</form>
-</div>
-<div class="cards-container">
-<input type="text" id="searchBox" placeholder="Search patients...">
-<div class="cards" id="patientsContainer"></div>
-</div>
-</div>
-</div>
-
-<!-- Doctor Dashboard -->
-<div id="doctorPage" style="display:none;">
-<h2>Doctor Dashboard</h2>
-<div class="cards" id="doctorPatients"></div>
-</div>
-
-<!-- Patient Dashboard -->
-<div id="patientPage" style="display:none;">
-<h2>Patient Dashboard</h2>
-<div class="cards" id="myCard"></div>
-</div>
+<!-- Payment popup -->
+<div class="popup hidden" id="payPopup">
+  <div class="popup-content">
+    <h3 style="margin:0;font-size:14px;">Payment</h3>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/QR_code_for_mobile_English_Wikipedia.svg" width="100"><br>
+    <p style="font-size:12px;">Pay via GPay<br><b id="payAmount"></b></p>
+    <button onclick="closePayPopup()" style="padding:4px 8px;font-size:11px;">Close</button>
+  </div>
 </div>
 
 <script>
-let users=JSON.parse(localStorage.getItem("users")||"[]");
-let clinics=JSON.parse(localStorage.getItem("clinics")||"[]");
-let currentUser=JSON.parse(localStorage.getItem("currentUser")||"null");
+// ===================== FIREBASE SETUP =====================
+const firebaseConfig = {
+  apiKey: "AIzaSyAb4liarXpnl5GC1eXJ6FhQp_ULa_wQgSw",
+  authDomain: "sunshot-d24a2.firebaseapp.com",
+  databaseURL: "https://sunshot-d24a2-default-rtdb.firebaseio.com",
+  projectId: "sunshot-d24a2",
+  storageBucket: "sunshot-d24a2.appspot.com",
+  messagingSenderId: "64784282158",
+  appId: "1:64784282158:web:693fbf4cd1a46a676525bf",
+  measurementId: "G-DLC7Q4KVHV"
+};
 
-// Default admin
-if(!users.some(u=>u.role==="admin")){
-  users.push({id:1,name:"Admin",email:"admin@wec.com",password:"admin123",role:"admin"});
-  localStorage.setItem("users",JSON.stringify(users));
-}
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const storage = firebase.storage();
 
-function save(){localStorage.setItem("users",JSON.stringify(users));localStorage.setItem("clinics",JSON.stringify(clinics));localStorage.setItem("currentUser",JSON.stringify(currentUser));}
-function logout(){currentUser=null;save();location.reload();}
-function showPage(){
-  document.getElementById("authPage").style.display=currentUser? "none":"flex";
-  document.getElementById("adminPage").style.display=(currentUser&&currentUser.role==="admin")? "flex":"none";
-  document.getElementById("doctorPage").style.display=(currentUser&&currentUser.role==="doctor")? "flex":"none";
-  document.getElementById("patientPage").style.display=(currentUser&&currentUser.role==="patient")? "flex":"none";
-  document.getElementById("logoutBtn").style.display=currentUser? "inline-block":"none";
-  fillDoctorOptions();fillClinicOptions();renderPatients();renderDoctorPatients();renderMyCard();
-}
+// 🔄 Force real-time refresh (fix sync delay)
+firebase.database().goOffline();
+firebase.database().goOnline();
 
-// login
-loginForm.addEventListener("submit",e=>{
-  e.preventDefault();
-  let u=users.find(x=>x.email===loginEmail.value && x.password===loginPassword.value && x.role===loginRole.value);
-  if(!u)return alert("Invalid credentials");
-  currentUser=u;save();showPage();
-});
+// ===================== VARIABLES =====================
+const ADMIN_EMAIL = "sunshot@gmail.com";
+const ADMIN_PASS = "sun123";
+let loggedIn = false;
 
-// add clinic
-clinicForm.addEventListener("submit",e=>{
-  e.preventDefault();
-  clinics.push({id:Date.now(),name:clinicName.value,address:clinicAddress.value,phone:clinicPhone.value});
-  save();alert("Clinic Added");clinicForm.reset();fillClinicOptions();
-});
-function fillClinicOptions(){doctorClinic.innerHTML=clinics.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");}
+const formArea = document.getElementById("formArea");
+const cardsContainer = document.getElementById("cardsContainer");
+const payPopup = document.getElementById("payPopup");
+const payAmount = document.getElementById("payAmount");
 
-// add doctor
-doctorForm.addEventListener("submit",e=>{
-  e.preventDefault();
-  let doc={id:Date.now(),name:doctorName.value,email:doctorEmail.value,password:doctorPassword.value,role:"doctor",clinicId:doctorClinic.value};
-  users.push(doc);save();alert("Doctor Added");doctorForm.reset();fillDoctorOptions();
-});
-
-// add patient
-patientForm.addEventListener("submit",e=>{
-  e.preventDefault();
-  let pat={id:Date.now(),name:patientName.value,email:patientEmail.value,password:patientPassword.value,role:"patient",phone:patientPhone.value,age:patientAge.value,problem:patientProblem.value,date:patientDate.value,time:patientTime.value,day:patientDay.value,address:patientAddress.value,doctorId:patientDoctor.value};
-  users.push(pat);save();patientForm.reset();renderPatients();renderDoctorPatients();
-});
-function fillDoctorOptions(){let docs=users.filter(u=>u.role==="doctor");patientDoctor.innerHTML=docs.map(d=>`<option value="${d.id}">${d.name}</option>`).join("");}
-
-// render patients (admin)
-function renderPatients(){
-  patientsContainer.innerHTML="";
-  let pats=users.filter(u=>u.role==="patient");
-  pats.forEach(p=>{
-    let card=document.createElement("div");card.className="card";
-    card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email}</p><p><b>Phone:</b> ${p.phone}</p><p><b>Age:</b> ${p.age}</p><p><b>Problem:</b> ${p.problem}</p><p><b>Date:</b> ${p.date} ${p.time} (${p.day})</p><p><b>Address:</b> ${p.address}</p>
-    <div><button class="outline" onclick="alert('SMS to ${p.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button><button class="outline" onclick="deleteUser(${p.id})">Delete</button></div>`;
-    patientsContainer.appendChild(card);
+// ===================== RENDER PRODUCTS =====================
+function renderProducts(snapshot) {
+  cardsContainer.innerHTML = "";
+  snapshot.forEach(child => {
+    const p = child.val();
+    const key = child.key;
+    let imgsHTML = p.images
+      ? p.images.map(src => `<img src="${src}" onclick="openPayPopup(${p.total})">`).join("")
+      : "";
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      ${imgsHTML}
+      <h4>${p.name}</h4>
+      <p>${p.material}</p>
+      <p>Size: ${p.size}</p>
+      <p>₹${p.price} × ${p.qty} = <b>₹${p.total}</b></p>
+      ${
+        loggedIn
+          ? `<button onclick="deleteProduct('${key}')">Delete</button>`
+          : `<button onclick="openPayPopup(${p.total})">Buy</button>`
+      }
+    `;
+    cardsContainer.appendChild(card);
   });
 }
 
-// doctor dashboard
-function renderDoctorPatients(){
-  doctorPatients.innerHTML="";
-  if(currentUser && currentUser.role==="doctor"){
-    let pats=users.filter(p=>p.role==="patient" && p.doctorId==currentUser.id);
-    pats.forEach(p=>{
-      let card=document.createElement("div");card.className="card";
-      card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email}</p><p><b>Phone:</b> ${p.phone}</p><p><b>Age:</b> ${p.age}</p><p><b>Problem:</b> ${p.problem}</p><p><b>Date:</b> ${p.date} ${p.time} (${p.day})</p><p><b>Address:</b> ${p.address}</p>
-      <div><button class="outline" onclick="alert('SMS to ${p.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button></div>`;
-      doctorPatients.appendChild(card);
-    });
+// ===================== ADD PRODUCT =====================
+async function addProduct() {
+  const name = document.getElementById("pname").value.trim();
+  const material = document.getElementById("pmaterial").value.trim();
+  const size = document.getElementById("psize").value.trim();
+  const price = parseFloat(document.getElementById("pprice").value) || 0;
+  const qty = parseInt(document.getElementById("pqty").value) || 1;
+  const imgs = document.getElementById("pimage").files;
+
+  if (!name || imgs.length === 0) {
+    alert("⚠️ Please fill all fields and select image(s).");
+    return;
+  }
+
+  const urls = [];
+  for (const file of imgs) {
+    const imgRef = storage.ref("images/" + Date.now() + "_" + file.name);
+    await imgRef.put(file);
+    const url = await imgRef.getDownloadURL();
+    urls.push(url);
+  }
+
+  const total = price * qty;
+  const product = { name, material, size, price, qty, total, images: urls };
+
+  await db.ref("products").push(product);
+  // 👇 Force refresh after adding
+  db.ref("products").once("value").then(renderProducts);
+  alert("✅ Product added successfully!");
+  document.querySelectorAll("#formArea input").forEach(i => (i.value = ""));
+}
+
+// ===================== DELETE PRODUCT =====================
+function deleteProduct(id) {
+  if (confirm("Delete this product?")) {
+    db.ref("products/" + id).remove();
   }
 }
 
-// patient dashboard
-function renderMyCard(){
-  myCard.innerHTML="";
-  if(currentUser&&currentUser.role==="patient"){
-    let card=document.createElement("div");card.className="card";
-    card.innerHTML=`<h3>${currentUser.name}</h3><p><b>Email:</b> ${currentUser.email}</p><p><b>Phone:</b> ${currentUser.phone}</p><p><b>Age:</b> ${currentUser.age}</p><p><b>Problem:</b> ${currentUser.problem}</p><p><b>Date:</b> ${currentUser.date} ${currentUser.time} (${currentUser.day})</p><p><b>Address:</b> ${currentUser.address}</p>
-    <div><button class="outline" onclick="alert('SMS to ${currentUser.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${currentUser.phone}','_blank')">WhatsApp</button></div>`;
-    myCard.appendChild(card);
-  }
+// ===================== PAYMENT POPUP =====================
+function openPayPopup(amount) {
+  payAmount.textContent = "₹" + amount;
+  payPopup.classList.remove("hidden");
+}
+function closePayPopup() {
+  payPopup.classList.add("hidden");
 }
 
-function deleteUser(id){users=users.filter(u=>u.id!==id);save();renderPatients();renderDoctorPatients();}
-searchBox.addEventListener("input",e=>{let q=e.target.value.toLowerCase();document.querySelectorAll("#patientsContainer .card").forEach(c=>{c.style.display=c.textContent.toLowerCase().includes(q)?"flex":"none";});});
-showPage();
+// ===================== LOGIN / LOGOUT =====================
+document.getElementById("addProductBtn").onclick = addProduct;
+
+document.getElementById("loginBtn").onclick = () => {
+  const email = prompt("Enter admin email:");
+  const pass = prompt("Enter password:");
+  if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
+    loggedIn = true;
+    formArea.style.display = "block";
+    document.getElementById("loginBtn").classList.add("hidden");
+    document.getElementById("logoutBtn").classList.remove("hidden");
+  } else {
+    alert("Invalid credentials! Use sunshot@gmail.com / sun123");
+  }
+};
+
+document.getElementById("logoutBtn").onclick = () => {
+  loggedIn = false;
+  formArea.style.display = "none";
+  document.getElementById("loginBtn").classList.remove("hidden");
+  document.getElementById("logoutBtn").classList.add("hidden");
+};
+
+// ===================== SYNC PRODUCTS =====================
+db.ref("products").on("value", renderProducts);
 </script>
+
 </body>
 </html>
